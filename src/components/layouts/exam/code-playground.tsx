@@ -3,7 +3,10 @@
 import { java } from "@codemirror/lang-java";
 import { python } from "@codemirror/lang-python";
 import { foldEffect } from "@codemirror/language";
+// import { type EditorView } from "@codemirror/view"; // Removing this as we fallback to any for now
 import CodeMirror from "@uiw/react-codemirror";
+import { vscodeDark } from "@uiw/codemirror-theme-vscode";
+import { githubLight } from "@uiw/codemirror-theme-github";
 import { ChevronDown, Loader2, Play, Send } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -84,8 +87,10 @@ export function CodePlayground({
   }, [cooldown]);
 
   // Editor State
-  const viewRef = useRef<any>(null); // Using any to avoid importing EditorView type directly
+  // biome-ignore lint/suspicious/noExplicitAny: CodeMirror ref types are complex
+  const viewRef = useRef<any>(null);
 
+  // biome-ignore lint/suspicious/noExplicitAny: CodeMirror types mismatch with library
   const foldBoilerplate = useCallback((view: any) => {
     if (!view) return;
 
@@ -134,6 +139,7 @@ export function CodePlayground({
   }, []);
 
   const onCreateEditor = useCallback(
+    // biome-ignore lint/suspicious/noExplicitAny: Library handler expectation mismatch
     (view: any) => {
       viewRef.current = view;
       foldBoilerplate(view);
@@ -491,7 +497,7 @@ export function CodePlayground({
                 // foldBoilerplate already uses dispatch which works on view.
               ]}
               onChange={(val) => setCode(question.id, selectedLanguage, val)}
-              theme={theme === "dark" ? "dark" : "light"}
+              theme={theme === "dark" ? vscodeDark : githubLight}
               className="h-full"
               basicSetup={{
                 lineNumbers: true,

@@ -159,7 +159,10 @@ export default function EditUserDialog({
               <Select
                 value={formData.gender}
                 onValueChange={(v) =>
-                  setFormData({ ...formData, gender: v as any })
+                  setFormData({
+                    ...formData,
+                    gender: v as "male" | "female" | "other",
+                  })
                 }
               >
                 <SelectTrigger>
@@ -254,7 +257,10 @@ export default function EditUserDialog({
               <Select
                 value={formData.role}
                 onValueChange={(v) =>
-                  setFormData({ ...formData, role: v as any })
+                  setFormData({
+                    ...formData,
+                    role: v as "student" | "instructor" | "admin",
+                  })
                 }
               >
                 <SelectTrigger>

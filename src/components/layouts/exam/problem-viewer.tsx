@@ -155,15 +155,15 @@ export function ProblemViewer({ question, assignmentId }: ProblemViewerProps) {
                     img: ({
                       className,
                       alt,
-                      ...props
+                      src,
                     }: React.ImgHTMLAttributes<HTMLImageElement>) => (
                       <NextImage
                         className={cn("rounded-md border", className)}
                         alt={alt || "Image"}
+                        src={(src as string) || ""}
                         width={600}
                         height={400}
                         style={{ maxWidth: "100%", height: "auto" }}
-                        {...(props as any)}
                       />
                     ),
                     hr: ({ ...props }) => (

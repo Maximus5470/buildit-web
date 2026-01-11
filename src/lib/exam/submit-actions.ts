@@ -11,7 +11,7 @@ import {
   questionTestCases,
 } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { calculateGradingScore } from "@/lib/grading";
+import { calculateGradingScore, type GradingConfig } from "@/lib/grading";
 import {
   executeCode,
   type JobResult,
@@ -201,7 +201,7 @@ export async function submitQuestion(
     }
 
     const gradingStrategy = assignment.exam.gradingStrategy;
-    const gradingConfig = assignment.exam.gradingConfig as any;
+    const gradingConfig = assignment.exam.gradingConfig as GradingConfig;
     const questionDifficulties: Record<string, "easy" | "medium" | "hard"> = {};
 
     if (gradingStrategy === "difficulty_based") {

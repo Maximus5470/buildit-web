@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, type SQL, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import db from "@/db";
@@ -12,6 +12,14 @@ import {
   userGroupMembers,
 } from "@/db/schema";
 import { auth } from "@/lib/auth";
+
+/** Configuration for exam question generation strategies */
+type StrategyConfig = {
+  easy?: number;
+  medium?: number;
+  hard?: number;
+  count?: number;
+};
 
 export async function initializeExamSession(examId: string) {
   const session = await auth.api.getSession({
@@ -115,7 +123,7 @@ export async function initializeExamSession(examId: string) {
     // 3. Question Selection
     const examData = relevantSlots[0].exam;
     const { strategyType } = examData;
-    const strategyConfig = examData.strategyConfig as any;
+    const strategyConfig = examData.strategyConfig as StrategyConfig | null;
 
     const questionIds = await generateExamQuestions(
       examId,
@@ -158,7 +166,7 @@ export async function initializeExamSession(examId: string) {
 export async function generateExamQuestions(
   examId: string,
   strategyType: string,
-  strategyConfig: any,
+  strategyConfig: StrategyConfig | null,
 ) {
   // Check if exam has specific collections assigned
   const linkedCollections = await db.query.examCollections.findMany({
@@ -205,7 +213,7 @@ export async function generateExamQuestions(
       count: number,
     ) => {
       if (count <= 0) return [];
-      const conditions: any[] = [eq(questions.difficulty, diff)];
+      const conditions: SQL[] = [eq(questions.difficulty, diff)];
       if (allowedQuestionIds.length > 0) {
         conditions.push(inArray(questions.id, allowedQuestionIds));
       }
@@ -228,7 +236,7 @@ export async function generateExamQuestions(
   } else {
     // "random_n" or default fallback
     const count = strategyConfig?.count || 3;
-    const conditions: any[] = [];
+    const conditions: SQL[] = [];
     if (allowedQuestionIds.length > 0) {
       conditions.push(inArray(questions.id, allowedQuestionIds));
     }

@@ -76,7 +76,7 @@ export function UserDropdown() {
               {session.user.email}
             </p>
             <p className="text-xs leading-none text-muted-foreground capitalize mt-1">
-              Role: {(session.user as any).role || "Student"}
+              Role: {(session.user as { role?: string }).role || "Student"}
             </p>
           </div>
         </DropdownMenuLabel>

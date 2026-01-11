@@ -3,11 +3,24 @@ export type Difficulty = "easy" | "medium" | "hard";
 
 export interface GradingInput {
   strategy: GradingStrategy | string;
-  config: any;
+  config: GradingConfig;
   passedQuestionIds: string[];
   questionDifficulties?: Record<string, Difficulty>;
   questionScores?: Record<string, number>; // questionId -> percentage passed (0.0 to 1.0)
 }
+
+/** Configuration for grading strategies */
+type GradingConfig = {
+  marks?: number;
+  easy?: number;
+  medium?: number;
+  hard?: number;
+  enablePartialPoints?: boolean;
+  rules?: {
+    count: number;
+    marks: number;
+  }[];
+};
 
 export function calculateGradingScore(input: GradingInput): number {
   const {

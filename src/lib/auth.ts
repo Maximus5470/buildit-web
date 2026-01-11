@@ -15,21 +15,6 @@ export const auth = betterAuth({
   plugins: [
     admin({
       defaultRole: "student",
-      roles: {
-        student: {
-          // biome-ignore lint/suspicious/noExplicitAny: better-auth internal type
-          authorize: () => true as any,
-          statements: [],
-        },
-        instructor: {
-          authorize: () => true as any,
-          statements: [],
-        },
-        admin: {
-          authorize: () => true as any,
-          statements: [],
-        },
-      },
     }),
     username({
       minUsernameLength: 5,

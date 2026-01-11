@@ -74,7 +74,9 @@ async function processUsers() {
           error &&
           typeof error === "object" &&
           "body" in error &&
-          (error as any).body?.message?.includes("already exists")
+          (error as { body?: { message?: string } }).body?.message?.includes(
+            "already exists",
+          )
         ) {
           // If user exists, fetch ID from DB and update fields
           const existingUser = await db.query.user.findFirst({

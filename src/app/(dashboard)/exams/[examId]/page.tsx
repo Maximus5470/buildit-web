@@ -13,7 +13,7 @@ export default async function ExamDetailsPage({
   const session = await auth.api.getSession({
     headers: await headers(),
   });
-  const exam = (await getExam(examId, session?.user?.id)) as any;
+  const exam = await getExam(examId, session?.user?.id);
 
   if (!exam) {
     notFound();

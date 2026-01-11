@@ -44,7 +44,7 @@ async function seedUsers() {
         console.log(`User ${u.username} already exists, updating role...`);
         await db
           .update(user)
-          .set({ role: u.role as any })
+          .set({ role: u.role as "student" | "instructor" | "admin" })
           .where(eq(user.id, existingUser.id));
         continue;
       }

@@ -13,6 +13,7 @@ import {
 import db from "@/db";
 import { examAssignments, questions } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import type { GradingConfig } from "@/lib/grading";
 import { ReturnToDashboardButton } from "./return-to-dashboard-button";
 
 interface ResultsPageProps {
@@ -61,7 +62,7 @@ export default async function ResultsPage({ params }: ResultsPageProps) {
   // Calculate Total Possible Score
   let totalPossibleScore = 0;
   const gradingStrategy = assignment.exam.gradingStrategy;
-  const gradingConfig = assignment.exam.gradingConfig as any;
+  const gradingConfig = assignment.exam.gradingConfig as GradingConfig;
 
   if (gradingStrategy === "linear") {
     totalPossibleScore = totalQuestions * (gradingConfig?.marks || 0);

@@ -1262,6 +1262,7 @@ export default function CreateExamClient({
                                             scheduleIdx === undefined ||
                                             scheduleIdx === -1
                                           )
+                                            // biome-ignore lint/complexity/noUselessFragments: Required for types
                                             return <></>;
 
                                           return (
@@ -1324,6 +1325,7 @@ export default function CreateExamClient({
                                             scheduleIdx === undefined ||
                                             scheduleIdx === -1
                                           )
+                                            // biome-ignore lint/complexity/noUselessFragments: Required for types
                                             return <></>;
 
                                           return (

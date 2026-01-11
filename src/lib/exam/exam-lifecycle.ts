@@ -55,9 +55,9 @@ export async function finishExam(assignmentId: string) {
 
     const allCompleted = allAssignments.every((a) => a.status === "completed");
 
-    // If all assignments are completed, update exam status to "ended"
+    // If all assignments are completed, update exam status to "completed"
     if (allCompleted) {
-      await db
+      await db  
         .update(exams)
         .set({
           status: "completed",
