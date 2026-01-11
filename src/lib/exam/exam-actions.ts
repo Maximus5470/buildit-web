@@ -75,6 +75,22 @@ export async function initializeExamSession(examId: string) {
       );
     }
 
+    // Check PIN Access (Cookie)
+    // We check if ANY of the relevant slots require a PIN (which they all should now)
+    // If a slot has a PIN, we check for the cookie.
+    const doesAnySlotRequirePin = relevantSlots.some(slot => !!slot.pin);
+
+    if (doesAnySlotRequirePin) {
+      const cookieStore = await import("next/headers").then(m => m.cookies());
+      const pinCookie = cookieStore.get(`exam_access_${examId}`);
+      if (!pinCookie || pinCookie.value !== "true") {
+        return {
+          success: false,
+          error: "PIN verification required. Please enter the correct PIN."
+        };
+      }
+    }
+
     const now = new Date();
     let hasValidSlot = false;
 
@@ -88,10 +104,6 @@ export async function initializeExamSession(examId: string) {
         break;
       }
     }
-
-    // Check if the exam itself is "active" or "ongoing" in status?
-    // Usually status is derived or manually set. If manual "upcoming", maybe block?
-    // For now, rely on Time.
 
     if (!hasValidSlot) {
       throw new Error(

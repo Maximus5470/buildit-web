@@ -13,11 +13,11 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import type { Question } from "./ide-shell";
+import { Problem } from "@/types/problem";
 
 interface ExamSidebarProps {
   examTitle: string;
-  questions: Question[];
+  questions: Pick<Problem, "id" | "title">[];
   activeId: string | null;
   onSelect: (id: string) => void;
   completedQuestionIds: string[];

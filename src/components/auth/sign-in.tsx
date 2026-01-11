@@ -21,6 +21,7 @@ import { getDeviceFingerprint } from "@/lib/utils/fingerprint";
 import { usePinStore } from "@/stores/pin-store";
 import PinSetupDialog from "./pin-setup-dialog";
 import PinVerificationDialog from "./pin-verification-dialog";
+import { enforceSingleSession } from "@/actions/auth-security";
 
 export default function SignIn() {
   const router = useRouter();
@@ -84,6 +85,9 @@ export default function SignIn() {
             // Still check PIN status without fingerprint
             await checkPinStatus("");
           }
+
+          // Enforce single session
+          await enforceSingleSession();
         },
         onError: (ctx) => {
           setGeneralError(ctx.error.message || "Invalid credentials");

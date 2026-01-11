@@ -3,15 +3,7 @@
 import { and, asc, desc, eq, gt, gte, ilike, inArray, lt, lte, sql } from "drizzle-orm";
 import db from "@/db";
 import { examAssignments, exams, examGroups, userGroupMembers } from "@/db/schema";
-
-export type GetExamsParams = {
-  page?: number;
-  perPage?: number;
-  search?: string;
-  status?: "upcoming" | "ongoing" | "completed";
-  sort?: string;
-  userId?: string;
-};
+import type { GetExamsParams } from "@/types/exam";
 
 export async function getExams({
   page = 1,
@@ -80,62 +72,93 @@ export async function getExams({
     const userGroupIds = userGroupsResult.map((ug) => ug.groupId);
 
     if (userGroupIds.length === 0) {
-      // User is not in any group, return empty result
       return { data: [], total: 0 };
     }
 
-    // Get exam IDs that are assigned to user's groups
-    const examGroupsResult = await db
-      .select({ examId: examGroups.examId })
+    // Get exam IDs that are assigned to user's groups WITH scheduling constraints
+    // If examGroups has startTime/endTime, use those. Otherwise fall back to global.
+    const examGroupsData = await db
+      .select({
+        examId: examGroups.examId,
+        groupId: examGroups.groupId,
+        startTime: examGroups.startTime,
+        endTime: examGroups.endTime,
+      })
       .from(examGroups)
       .where(inArray(examGroups.groupId, userGroupIds));
 
-    const allowedExamIds = examGroupsResult.map((eg) => eg.examId);
+    if (examGroupsData.length === 0) {
+      return { data: [], total: 0 };
+    }
+
+    // Filter relevant exams based on their batch schedules
+    const relevantExams = examGroupsData.filter(eg => {
+      // If batch schedule is provided, check it
+      if (eg.startTime && currentTimestamp < eg.startTime) return false;
+      if (eg.endTime && currentTimestamp > eg.endTime) return false;
+      return true;
+    });
+
+    const allowedExamIds = Array.from(new Set(relevantExams.map(eg => eg.examId)));
 
     if (allowedExamIds.length === 0) {
-      // No exams assigned to user's groups
       return { data: [], total: 0 };
     }
 
     // Add exam ID filter to conditions
     const examIdCondition = inArray(exams.id, allowedExamIds);
-    const finalWhereClause = whereClause 
+    const finalWhereClause = whereClause
       ? and(whereClause, examIdCondition)
       : examIdCondition;
 
-    // Data Query with user's group filter
-    data = await db
-      .select()
-      .from(exams)
-      .where(finalWhereClause)
-      .limit(perPage)
-      .offset((page - 1) * perPage)
-      .orderBy(...orderBy);
+    // Data Query
+    data = await db.query.exams.findMany({
+      where: finalWhereClause,
+      limit: perPage,
+      offset: (page - 1) * perPage,
+      orderBy: orderBy,
+    });
 
-    // Count Query with user's group filter
-    const [countResult] = await db
+    // Count Query
+    const countResult = await db
       .select({ count: sql<number>`cast(count(*) as integer)` })
       .from(exams)
       .where(finalWhereClause);
 
-    total = countResult?.count ?? 0;
-  } else {
-    // No userId provided, return all exams (for admin view)
-    data = await db
-      .select()
-      .from(exams)
-      .where(whereClause)
-      .limit(perPage)
-      .offset((page - 1) * perPage)
-      .orderBy(...orderBy);
+    total = countResult[0]?.count ?? 0;
 
-    // Count Query
-    const [countResult] = await db
+    // For students, override the global startTime/endTime in the returned data 
+    // with their batch-specific schedule if available.
+    data = data.map(exam => {
+      const batchSchedule = examGroupsData.find(eg => eg.examId === exam.id && userGroupIds.includes(eg.groupId));
+      return {
+        ...exam,
+        startTime: batchSchedule?.startTime || exam.startTime,
+        endTime: batchSchedule?.endTime || exam.endTime,
+      };
+    });
+  } else {
+    // No userId provided, return all exams (for admin view) with PINs
+    data = await db.query.exams.findMany({
+      where: whereClause,
+      limit: perPage,
+      offset: (page - 1) * perPage,
+      orderBy: orderBy,
+      with: {
+        examGroups: {
+          with: {
+            group: true,
+          },
+        },
+      },
+    });
+
+    const countResult = await db
       .select({ count: sql<number>`cast(count(*) as integer)` })
       .from(exams)
-      .where(whereClause);
+      .where(whereClause || sql`TRUE`);
 
-    total = countResult?.count ?? 0;
+    total = countResult[0]?.count ?? 0;
   }
 
   // If userId is provided, fetch user's assignment status for each exam

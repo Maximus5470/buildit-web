@@ -62,7 +62,7 @@ export async function finishExam(assignmentId: string) {
       await db
         .update(exams)
         .set({
-          status: "ended",
+          status: "completed",
         })
         .where(eq(exams.id, assignment.examId));
 

@@ -57,22 +57,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// User Interface
-export interface User {
-    id: string;
-    rollNo: string;
-    name: string;
-    email: string;
-    role: "student" | "instructor" | "admin";
-    branch: string;
-    semester: string;
-}
-
-export interface Group {
-    id: string;
-    name: string;
-    description: string | null;
-}
+import { User, Group } from "@/types/user";
 
 // Schema Definition
 const examFormSchema = z.object({
@@ -83,12 +68,21 @@ const examFormSchema = z.object({
     duration: z.number().min(5, {
         message: "Duration must be at least 5 minutes.",
     }),
-    startTime: z.string().refine((val) => !Number.isNaN(Date.parse(val)), {
+    startTime: z.string().optional().refine((val) => !val || !Number.isNaN(Date.parse(val)), {
         message: "Invalid start time",
     }),
-    endTime: z.string().refine((val) => !Number.isNaN(Date.parse(val)), {
+    endTime: z.string().optional().refine((val) => !val || !Number.isNaN(Date.parse(val)), {
         message: "Invalid end time",
     }),
+    groupSchedules: z.array(z.object({
+        groupId: z.string(),
+        startTime: z.string().refine((val) => !Number.isNaN(Date.parse(val)), {
+            message: "Invalid start time",
+        }),
+        endTime: z.string().refine((val) => !Number.isNaN(Date.parse(val)), {
+            message: "Invalid end time",
+        }),
+    })).optional(),
     gradingStrategy: z.enum([
         "standard_20_40_50",
         "linear",
@@ -123,6 +117,28 @@ const examFormSchema = z.object({
 
 type ExamFormValues = z.infer<typeof examFormSchema>;
 
+const calculateEndTime = (startTimeStr: string, duration: number) => {
+    if (!startTimeStr || !duration) return "";
+    try {
+        const startDate = new Date(startTimeStr);
+        if (isNaN(startDate.getTime())) return "";
+
+        const endDate = new Date(startDate.getTime() + duration * 60000);
+
+        // Format to YYYY-MM-DDTHH:mm
+        const pad = (num: number) => String(num).padStart(2, '0');
+        const year = endDate.getFullYear();
+        const month = pad(endDate.getMonth() + 1);
+        const day = pad(endDate.getDate());
+        const hours = pad(endDate.getHours());
+        const minutes = pad(endDate.getMinutes());
+
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    } catch (e) {
+        return "";
+    }
+};
+
 interface CreateExamClientProps {
     collections: any[]; // Replace with proper type if available
     problems: any[]; // Replace with proper type if available
@@ -138,6 +154,8 @@ export default function CreateExamClient({
 }: CreateExamClientProps) {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
+    const [showPinDialog, setShowPinDialog] = useState(false);
+    const [createdPins, setCreatedPins] = useState<{ groupName: string; pin: string }[]>([]);
 
     const form = useForm<ExamFormValues>({
         resolver: zodResolver(examFormSchema),
@@ -283,9 +301,14 @@ export default function CreateExamClient({
 
             const result = await createExam({
                 title: data.title,
-                startTime: new Date(data.startTime),
+                startTime: data.startTime ? new Date(data.startTime) : undefined,
+                endTime: data.endTime ? new Date(data.endTime) : undefined,
                 groupIds: groupIds,
-                endTime: new Date(data.endTime),
+                groupSchedules: data.groupSchedules?.map(gs => ({
+                    ...gs,
+                    startTime: new Date(gs.startTime),
+                    endTime: new Date(gs.endTime)
+                })),
                 durationMinutes: data.duration,
                 config
             });
@@ -294,7 +317,12 @@ export default function CreateExamClient({
                 toast.error(result.error);
             } else {
                 toast.success("Exam created successfully!");
-                setTimeout(() => router.push("/exams"), 0);
+                if (result.pins && result.pins.length > 0) {
+                    setCreatedPins(result.pins);
+                    setShowPinDialog(true);
+                } else {
+                    setTimeout(() => router.push("/exams"), 0);
+                }
             }
         } catch (error) {
             toast.error("Failed to create exam.");
@@ -373,7 +401,7 @@ export default function CreateExamClient({
                                         )}
                                     />
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
                                         <FormField
                                             control={form.control}
                                             name="duration"
@@ -384,39 +412,24 @@ export default function CreateExamClient({
                                                         <Input
                                                             type="number"
                                                             value={field.value}
-                                                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                                            onChange={(e) => {
+                                                                const newDuration = parseInt(e.target.value) || 0;
+                                                                field.onChange(newDuration);
+
+                                                                // Update all batch end times based on new duration
+                                                                const currentSchedules = form.getValues("groupSchedules") || [];
+                                                                if (currentSchedules.length > 0) {
+                                                                    const updatedSchedules = currentSchedules.map(s => ({
+                                                                        ...s,
+                                                                        endTime: calculateEndTime(s.startTime, newDuration)
+                                                                    }));
+                                                                    form.setValue("groupSchedules", updatedSchedules);
+                                                                }
+                                                            }}
                                                             onBlur={field.onBlur}
                                                             name={field.name}
                                                             ref={field.ref}
                                                         />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-
-                                        <FormField
-                                            control={form.control}
-                                            name="startTime"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Start Time</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="datetime-local" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-
-                                        <FormField
-                                            control={form.control}
-                                            name="endTime"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>End Time</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="datetime-local" {...field} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -1013,46 +1026,129 @@ export default function CreateExamClient({
 
                                     {assignedTo === "GROUPS" && (
                                         <div className="pl-6 border-l-2 space-y-4">
-                                            <FormLabel>Select Groups</FormLabel>
+                                            <FormLabel>Select Groups and Schedule</FormLabel>
                                             <div className="border rounded-md overflow-hidden">
-                                                <ScrollArea className="h-[200px]">
-                                                    <div className="p-4 space-y-2">
-                                                        {groups.map((group) => (
-                                                            <FormField
-                                                                key={group.id}
-                                                                control={form.control}
-                                                                name="selectedGroups"
-                                                                render={({ field }) => (
-                                                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-2 hover:bg-muted/50 rounded-sm">
-                                                                        <FormControl>
-                                                                            <Checkbox
-                                                                                checked={field.value?.includes(group.id)}
-                                                                                onCheckedChange={(checked) => {
-                                                                                    const value = field.value || [];
-                                                                                    if (checked) {
-                                                                                        field.onChange([...value, group.id]);
-                                                                                    } else {
-                                                                                        field.onChange(
-                                                                                            value.filter((val) => val !== group.id)
-                                                                                        );
-                                                                                    }
+                                                <ScrollArea className="h-[300px]">
+                                                    <div className="p-4 space-y-4">
+                                                        {groups.map((group) => {
+                                                            const isSelected = form.watch("selectedGroups")?.includes(group.id);
+                                                            return (
+                                                                <div key={group.id} className="space-y-4 p-4 border rounded-lg bg-card/50">
+                                                                    <FormField
+                                                                        control={form.control}
+                                                                        name="selectedGroups"
+                                                                        render={({ field }) => (
+                                                                            <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-2 hover:bg-muted/50 rounded-sm">
+                                                                                <FormControl>
+                                                                                    <Checkbox
+                                                                                        checked={field.value?.includes(group.id)}
+                                                                                        onCheckedChange={(checked) => {
+                                                                                            const value = field.value || [];
+                                                                                            let newValue;
+                                                                                            if (checked) {
+                                                                                                newValue = [...value, group.id];
+                                                                                            } else {
+                                                                                                newValue = value.filter((val) => val !== group.id);
+                                                                                            }
+                                                                                            field.onChange(newValue);
+
+                                                                                            // Manage groupSchedules sync
+                                                                                            const currentSchedules = form.getValues("groupSchedules") || [];
+                                                                                            if (checked) {
+                                                                                                if (!currentSchedules.find(s => s.groupId === group.id)) {
+                                                                                                    form.setValue("groupSchedules", [
+                                                                                                        ...currentSchedules,
+                                                                                                        { groupId: group.id, startTime: "", endTime: "" }
+                                                                                                    ]);
+                                                                                                }
+                                                                                            } else {
+                                                                                                form.setValue("groupSchedules", currentSchedules.filter(s => s.groupId !== group.id));
+                                                                                            }
+                                                                                        }}
+                                                                                    />
+                                                                                </FormControl>
+                                                                                <div className="space-y-1 leading-none min-w-0">
+                                                                                    <FormLabel className="font-medium truncate block">
+                                                                                        {group.name}
+                                                                                    </FormLabel>
+                                                                                    {group.description && (
+                                                                                        <p className="text-xs text-muted-foreground truncate">
+                                                                                            {group.description}
+                                                                                        </p>
+                                                                                    )}
+                                                                                </div>
+                                                                            </FormItem>
+                                                                        )}
+                                                                    />
+
+                                                                    {isSelected && (
+                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-9">
+                                                                            <FormField
+                                                                                control={form.control}
+                                                                                name="groupSchedules"
+                                                                                render={({ field }) => {
+                                                                                    const scheduleIdx = field.value?.findIndex(s => s.groupId === group.id);
+                                                                                    if (scheduleIdx === undefined || scheduleIdx === -1) return <></>;
+
+                                                                                    return (
+                                                                                        <FormItem>
+                                                                                            <FormLabel className="text-xs">Start Time</FormLabel>
+                                                                                            <FormControl>
+                                                                                                <Input
+                                                                                                    type="datetime-local"
+                                                                                                    value={field.value?.[scheduleIdx]?.startTime || ""}
+                                                                                                    onChange={(e) => {
+                                                                                                        const newSchedules = [...(field.value || [])];
+                                                                                                        const startTime = e.target.value;
+                                                                                                        const duration = form.getValues("duration");
+                                                                                                        const endTime = calculateEndTime(startTime, duration);
+
+                                                                                                        newSchedules[scheduleIdx] = {
+                                                                                                            ...newSchedules[scheduleIdx],
+                                                                                                            startTime,
+                                                                                                            endTime
+                                                                                                        };
+
+                                                                                                        field.onChange(newSchedules);
+                                                                                                    }}
+                                                                                                />
+                                                                                            </FormControl>
+                                                                                            <FormMessage />
+                                                                                        </FormItem>
+                                                                                    );
                                                                                 }}
                                                                             />
-                                                                        </FormControl>
-                                                                        <div className="space-y-1 leading-none min-w-0">
-                                                                            <FormLabel className="font-medium truncate block">
-                                                                                {group.name}
-                                                                            </FormLabel>
-                                                                            {group.description && (
-                                                                                <p className="text-xs text-muted-foreground truncate">
-                                                                                    {group.description}
-                                                                                </p>
-                                                                            )}
+                                                                            <FormField
+                                                                                control={form.control}
+                                                                                name="groupSchedules"
+                                                                                render={({ field }) => {
+                                                                                    const scheduleIdx = field.value?.findIndex(s => s.groupId === group.id);
+                                                                                    if (scheduleIdx === undefined || scheduleIdx === -1) return <></>;
+
+                                                                                    return (
+                                                                                        <FormItem>
+                                                                                            <FormLabel className="text-xs">End Time</FormLabel>
+                                                                                            <FormControl>
+                                                                                                <Input
+                                                                                                    type="datetime-local"
+                                                                                                    value={field.value?.[scheduleIdx]?.endTime || ""}
+                                                                                                    onChange={(e) => {
+                                                                                                        const newSchedules = [...(field.value || [])];
+                                                                                                        newSchedules[scheduleIdx] = { ...newSchedules[scheduleIdx], endTime: e.target.value };
+                                                                                                        field.onChange(newSchedules);
+                                                                                                    }}
+                                                                                                />
+                                                                                            </FormControl>
+                                                                                            <FormMessage />
+                                                                                        </FormItem>
+                                                                                    );
+                                                                                }}
+                                                                            />
                                                                         </div>
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                        ))}
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                 </ScrollArea>
                                             </div>
@@ -1170,7 +1266,48 @@ export default function CreateExamClient({
                         </TabsContent>
                     </Tabs>
                 </form>
-            </Form >
-        </div >
+            </Form>
+
+            <Dialog open={showPinDialog} onOpenChange={(open) => {
+                if (!open) router.push("/exams");
+                setShowPinDialog(open);
+            }}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Exam Created Successfully!</DialogTitle>
+                        <DialogDescription>
+                            The following PINs have been generated for each batch. Please share these with the respective students.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        {createdPins.map((item, index) => (
+                            <div key={index} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+                                <div>
+                                    <p className="text-sm font-medium">{item.groupName}</p>
+                                    <p className="font-mono text-2xl font-bold tracking-widest text-primary">
+                                        {item.pin}
+                                    </p>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(`${item.groupName} - ${item.pin}`);
+                                        toast.success(`PIN for ${item.groupName} copied!`);
+                                    }}
+                                >
+                                    Copy
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={() => router.push("/exams")}>
+                            Go to Exams
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
     );
 }

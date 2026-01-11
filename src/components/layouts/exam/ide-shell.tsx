@@ -15,22 +15,15 @@ import { ExamHeader } from "./exam-header";
 import { ExamSidebar } from "./exam-sidebar";
 import { ProblemViewer } from "./problem-viewer";
 
-export interface TestCase {
-  id: string;
-  input: string;
-  expectedOutput: string;
-}
+import { Problem, TestCase } from "@/types/problem";
 
-export interface Question {
-  id: string;
-  title: string;
-  problemStatement: string;
-  driverCode: Record<string, string> | null;
+// Minimal question type for exam sessions
+type ExamQuestion = Pick<Problem, "id" | "title" | "problemStatement" | "driverCode"> & {
   testCases: TestCase[];
-}
+};
 
 interface IDEShellProps {
-  questions: Question[];
+  questions: ExamQuestion[];
   user: {
     name: string;
     image?: string;

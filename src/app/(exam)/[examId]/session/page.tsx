@@ -47,12 +47,6 @@ export default async function SessionPage({
 
   const questionList = await db.query.questions.findMany({
     where: inArray(questions.id, questionIds),
-    columns: {
-      id: true,
-      title: true,
-      problemStatement: true,
-      driverCode: true,
-    },
     with: {
       testCases: {
         where: (tc, { eq }) => eq(tc.isHidden, false),

@@ -32,17 +32,7 @@ import { usePageName } from "@/hooks/use-page-name";
 import { useSession } from "@/lib/auth-client";
 import type { ExamConfig } from "@/types/exam-config";
 
-interface Exam {
-  id: string;
-  title: string;
-  startTime: Date;
-  endTime: Date;
-  durationMinutes: number;
-  config: unknown;
-  createdBy: string;
-  createdAt: Date | null;
-  updatedAt: Date;
-}
+import { Exam } from "@/types/exam";
 
 interface ExamDetailsViewProps {
   exam: Exam;
@@ -293,6 +283,40 @@ export function ExamDetailsView({ exam }: ExamDetailsViewProps) {
               </div>
             </CardContent>
           </Card>
+
+          {(session?.user?.role === "admin" || session?.user?.role === "instructor") && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Exam Access (Batch PINs)</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {exam.examGroups && exam.examGroups.length > 0 ? (
+                  exam.examGroups.map((eg) => (
+                    <div key={eg.id}>
+                      <span className="block text-sm font-medium">{eg.group.name}</span>
+                      <div className="flex flex-col gap-1 mt-1">
+                        <span className="text-xs text-muted-foreground">
+                          PIN: <span className="font-mono font-bold text-primary">{eg.pin || "N/A"}</span>
+                        </span>
+                        {eg.startTime && (
+                          <span className="text-xs text-muted-foreground">
+                            Start: {format(new Date(eg.startTime), "MMM d, p")}
+                          </span>
+                        )}
+                        {eg.endTime && (
+                          <span className="text-xs text-muted-foreground">
+                            End: {format(new Date(eg.endTime), "MMM d, p")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">No groups assigned to this exam.</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

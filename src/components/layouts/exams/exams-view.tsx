@@ -1,11 +1,10 @@
 "use client";
 
 import { format } from "date-fns";
-import { Calendar, Clock, Info, Play } from "lucide-react";
+import { Calendar, Clock, Info, Play, Users } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { GetExamsParams } from "@/actions/exams-list";
 import { DataItemsView } from "@/components/common/data-items/data-items-root";
 import {
   AlertDialog,
@@ -23,21 +22,19 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { usePageName } from "@/hooks/use-page-name";
 import { useSession } from "@/lib/auth-client";
+import { toast } from "sonner";
 
-interface Exam {
-  id: string;
-  title: string;
-  startTime: Date;
-  endTime: Date;
-  durationMinutes: number;
-  config: unknown;
-  createdBy: string;
-  createdAt: Date | null;
-  updatedAt: Date;
-  userSessionStatus?: string | null;
-}
+import { GetExamsParams, Exam } from "@/types/exam";
 
 interface ExamsViewProps {
   data: Exam[];
@@ -57,6 +54,7 @@ export function ExamsView({
   const session = useSession();
   const router = useRouter();
   const [showError, setShowError] = useState(false);
+  const [viewingPinsExam, setViewingPinsExam] = useState<Exam | null>(null);
 
   useEffect(() => {
     if (error) {
@@ -76,7 +74,7 @@ export function ExamsView({
     if (userSessionStatus === "completed") {
       return <Badge variant="secondary">Completed</Badge>;
     }
-    
+
     const now = new Date();
     if (now < start)
       return (
@@ -122,48 +120,68 @@ export function ExamsView({
     },
     {
       header: "Actions",
-      accessorKey: (item: Exam) => (
-        <div className="flex items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button asChild size="icon" variant="ghost" className="h-8 w-8">
-                <Link href={`/exams/${item.id}`}>
-                  <Info className="h-4 w-4" />
-                </Link>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>View Details</p>
-            </TooltipContent>
-          </Tooltip>
-          {isOngoing(item.startTime, item.endTime) && 
-           !item.userSessionStatus && (
+      accessorKey: (item: Exam) => {
+        const isStaff = session.data?.user.role === "admin" || session.data?.user.role === "instructor";
+        return (
+          <div className="flex items-center gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  asChild
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8 text-primary"
-                >
-                  <Link href={`/${item.id}/onboarding`}>
-                    <Play className="h-4 w-4" />
+                <Button asChild size="icon" variant="ghost" className="h-8 w-8">
+                  <Link href={`/exams/${item.id}`}>
+                    <Info className="h-4 w-4" />
                   </Link>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Start Exam</p>
+                <p>View Details</p>
               </TooltipContent>
             </Tooltip>
-          )}
-        </div>
-      ),
+            {isStaff && item.examGroups && item.examGroups.length > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-amber-500 hover:text-amber-600 hover:bg-amber-500/10"
+                    onClick={() => setViewingPinsExam(item)}
+                  >
+                    <Users className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>View Batch PINs</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {isOngoing(item.startTime, item.endTime) &&
+              !item.userSessionStatus && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      asChild
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-primary"
+                    >
+                      <Link href={`/${item.id}/onboarding`}>
+                        <Play className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Start Exam</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+          </div>
+        );
+      },
       className: "w-[100px]",
     },
   ];
 
   const renderCard = (item: Exam) => (
-    <div 
+    <div
       onClick={() => router.push(`/exams/${item.id}`)}
       className="flex flex-col h-full border rounded-xl p-6 hover:border-primary/50 transition-colors bg-card text-card-foreground shadow-sm cursor-pointer"
     >
@@ -191,12 +209,22 @@ export function ExamsView({
         <Button asChild variant="outline" className="flex-1">
           <Link href={`/exams/${item.id}`}>View Details</Link>
         </Button>
+        {(session.data?.user.role === "admin" || session.data?.user.role === "instructor") &&
+          item.examGroups && item.examGroups.length > 0 && (
+            <Button
+              variant="outline"
+              className="flex-1 border-amber-200 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+              onClick={() => setViewingPinsExam(item)}
+            >
+              View PINs
+            </Button>
+          )}
         {item.userSessionStatus === "completed" ? (
           <Button asChild className="flex-1">
             <Link href={`/${item.id}/results`}>View Results</Link>
           </Button>
-        ) : isOngoing(item.startTime, item.endTime) && 
-         !item.userSessionStatus && (
+        ) : isOngoing(item.startTime, item.endTime) &&
+        !item.userSessionStatus && (
           <Button asChild className="flex-1">
             <Link href={`/${item.id}/onboarding`}>Start Exam</Link>
           </Button>
@@ -235,13 +263,13 @@ export function ExamsView({
         ]}
         createAction={
           session?.data?.user.role === "instructor" ||
-          session?.data?.user.role === "admin"
+            session?.data?.user.role === "admin"
             ? {
-                label: "Create Exam",
-                onClick: () => {
-                  router.push("/exams/create");
-                },
-              }
+              label: "Create Exam",
+              onClick: () => {
+                router.push("/exams/create");
+              },
+            }
             : undefined
         }
       />
@@ -299,6 +327,44 @@ export function ExamsView({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!viewingPinsExam} onOpenChange={(open: boolean) => !open && setViewingPinsExam(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Batch PINs: {viewingPinsExam?.title}</DialogTitle>
+            <DialogDescription>
+              Unique access codes for each assigned batch.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {viewingPinsExam?.examGroups?.map((item, index) => (
+              <div key={index} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+                <div>
+                  <p className="text-sm font-medium">{item.group.name}</p>
+                  <p className="font-mono text-2xl font-bold tracking-widest text-primary">
+                    {item.pin}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${item.group.name} - ${item.pin}`);
+                    toast.success(`PIN for ${item.group.name} copied!`);
+                  }}
+                >
+                  Copy
+                </Button>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewingPinsExam(null)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

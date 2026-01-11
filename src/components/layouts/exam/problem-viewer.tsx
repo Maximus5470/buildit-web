@@ -14,10 +14,10 @@ import {
 } from "@/lib/exam/history-actions";
 import { cn } from "@/lib/utils";
 import { useExamStore } from "@/stores/exam-store";
-import type { Question } from "./ide-shell";
+import { Problem } from "@/types/problem";
 
 interface ProblemViewerProps {
-  question: Question;
+  question: Pick<Problem, "id" | "problemStatement">;
   assignmentId: string;
 }
 
@@ -124,7 +124,7 @@ export function ProblemViewer({ question, assignmentId }: ProblemViewerProps) {
                     p: ({ className, ...props }) => (
                       <p
                         className={cn(
-                          "leading-7 [&:not(:first-child)]:mt-6",
+                          "leading-7 not-first:mt-6",
                           className,
                         )}
                         {...props}
@@ -148,7 +148,7 @@ export function ProblemViewer({ question, assignmentId }: ProblemViewerProps) {
                     blockquote: ({ className, ...props }) => (
                       <blockquote
                         className={cn(
-                          "mt-6 border-l-2 pl-6 italic [&>*]:text-muted-foreground",
+                          "mt-6 border-l-2 pl-6 italic *:text-muted-foreground",
                           className,
                         )}
                         {...props}
@@ -186,7 +186,7 @@ export function ProblemViewer({ question, assignmentId }: ProblemViewerProps) {
                     th: ({ className, ...props }) => (
                       <th
                         className={cn(
-                          "border px-4 py-2 text-left font-bold [&[align=center]]:text-center [&[align=right]]:text-right",
+                          "border px-4 py-2 text-left font-bold [[align=center]]:text-center [[align=right]]:text-right",
                           className,
                         )}
                         {...props}
@@ -195,7 +195,7 @@ export function ProblemViewer({ question, assignmentId }: ProblemViewerProps) {
                     td: ({ className, ...props }) => (
                       <td
                         className={cn(
-                          "border px-4 py-2 text-left [&[align=center]]:text-center [&[align=right]]:text-right",
+                          "border px-4 py-2 text-left [[align=center]]:text-center [[align=right]]:text-right",
                           className,
                         )}
                         {...props}
@@ -311,13 +311,12 @@ function SubmissionsList({
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <span
-                    className={`text-sm font-semibold capitalize ${
-                      sub.verdict === "passed"
+                    className={`text-sm font-semibold capitalize ${sub.verdict === "passed"
                         ? "text-green-500"
                         : sub.verdict === "failed"
                           ? "text-red-500"
                           : "text-amber-500"
-                    }`}
+                      }`}
                   >
                     {sub.verdict.replace("_", " ")}
                   </span>

@@ -29,8 +29,8 @@ export const submissionVerdictEnum = pgEnum("submission_verdict", [
 ]);
 export const examStatusEnum = pgEnum("exam_status", [
   "upcoming",
-  "active",
-  "ended",
+  "ongoing",
+  "completed",
 ]);
 export const strategyTypeEnum = pgEnum("strategy_type", [
   "random_n",

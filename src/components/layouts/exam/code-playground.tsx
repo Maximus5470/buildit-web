@@ -34,10 +34,9 @@ import {
   runWithCustomInput,
 } from "@/lib/exam/code-actions";
 import { useExamStore } from "@/stores/exam-store";
-import type { TestcaseResult } from "@/types/problem";
+import { Problem, TestcaseResult } from "@/types/problem";
 import ThemeToggle from "@/components/common/theme-toggle";
 import { ButtonGroup } from "@/components/ui/button-group";
-import type { Question } from "./ide-shell";
 import TestCaseConsole from "./test-case-console";
 
 interface Runtime {
@@ -46,7 +45,7 @@ interface Runtime {
 }
 
 interface CodePlaygroundProps {
-  question: Question;
+  question: Pick<Problem, "id" | "driverCode" | "testCases">;
   assignmentId: string;
 }
 
@@ -197,7 +196,7 @@ export function CodePlayground({
 
   const defaultCode =
     (question.driverCode as Record<string, string> | null)?.[
-      selectedLanguage
+    selectedLanguage
     ] || "";
 
   // Access code for specific language
