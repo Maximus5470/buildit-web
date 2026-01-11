@@ -5,11 +5,11 @@ export function getGreeting(): string {
   const day = now.getDay(); // 0-6 (Sun-Sat)
 
   // Time-based
-  let timeGreeting = "Good morning";
+  let _timeGreeting = "Good morning";
   if (hour >= 12 && hour < 17) {
-    timeGreeting = "Good afternoon";
+    _timeGreeting = "Good afternoon";
   } else if (hour >= 17) {
-    timeGreeting = "Good evening";
+    _timeGreeting = "Good evening";
   }
 
   // Season/Month checks (Northern Hemisphere)

@@ -2,7 +2,11 @@
 
 import { and, asc, desc, eq, ilike, sql } from "drizzle-orm";
 import db from "@/db";
-import { collectionQuestions, questionCollections, questions } from "@/db/schema";
+import {
+  collectionQuestions,
+  questionCollections,
+  questions,
+} from "@/db/schema";
 
 export type GetQuestionCollectionsParams = {
   page?: number;
@@ -52,7 +56,7 @@ export async function getQuestionCollections({
 export async function getQuestionsInCollection(
   collectionId: string,
   page: number = 1,
-  perPage: number = 10
+  perPage: number = 10,
 ) {
   const questionsInCollection = await db
     .select({
@@ -77,12 +81,14 @@ export async function getQuestionsInCollection(
 
   const total = countResult?.count ?? 0;
 
-  return { 
-    data: questionsInCollection.map(q => ({
+  return {
+    data: questionsInCollection.map((q) => ({
       ...q,
-      allowedLanguages: Array.isArray(q.allowedLanguages) ? q.allowedLanguages : []
-    })), 
-    total 
+      allowedLanguages: Array.isArray(q.allowedLanguages)
+        ? q.allowedLanguages
+        : [],
+    })),
+    total,
   };
 }
 
@@ -113,7 +119,7 @@ export async function getAllQuestions(search?: string) {
 
 export async function addQuestionToCollection(
   collectionId: string,
-  questionId: string
+  questionId: string,
 ) {
   try {
     // Check if the question is already in the collection
@@ -123,33 +129,39 @@ export async function addQuestionToCollection(
       .where(
         and(
           eq(collectionQuestions.collectionId, collectionId),
-          eq(collectionQuestions.questionId, questionId)
-        )
+          eq(collectionQuestions.questionId, questionId),
+        ),
       )
       .limit(1);
 
     if (existing.length > 0) {
-      return { success: false, error: "Question is already in this collection" };
+      return {
+        success: false,
+        error: "Question is already in this collection",
+      };
     }
 
     await db.insert(collectionQuestions).values({
       collectionId,
       questionId,
     });
-    
+
     return { success: true };
   } catch (error) {
     console.error("Error adding question to collection:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Failed to add question to collection" 
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to add question to collection",
     };
   }
 }
 
 export async function removeQuestionFromCollection(
   collectionId: string,
-  questionId: string
+  questionId: string,
 ) {
   try {
     await db
@@ -157,8 +169,8 @@ export async function removeQuestionFromCollection(
       .where(
         and(
           eq(collectionQuestions.collectionId, collectionId),
-          eq(collectionQuestions.questionId, questionId)
-        )
+          eq(collectionQuestions.questionId, questionId),
+        ),
       );
     return { success: true };
   } catch (error) {

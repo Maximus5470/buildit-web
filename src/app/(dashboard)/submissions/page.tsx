@@ -1,8 +1,8 @@
-import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { getExamAssignmentsList } from "@/actions/exam-assignments-list";
 import { SubmissionsView } from "@/components/layouts/submissions/submissions-view";
+import { auth } from "@/lib/auth";
 
 export default async function SubmissionsPage() {
   const session = await auth.api.getSession({

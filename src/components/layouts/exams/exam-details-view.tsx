@@ -9,7 +9,6 @@ import {
   PlayCircle,
   Settings,
   User,
-  XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -30,9 +29,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { usePageName } from "@/hooks/use-page-name";
 import { useSession } from "@/lib/auth-client";
+import type { Exam } from "@/types/exam";
 import type { ExamConfig } from "@/types/exam-config";
-
-import { Exam } from "@/types/exam";
 
 interface ExamDetailsViewProps {
   exam: Exam;
@@ -284,7 +282,8 @@ export function ExamDetailsView({ exam }: ExamDetailsViewProps) {
             </CardContent>
           </Card>
 
-          {(session?.user?.role === "admin" || session?.user?.role === "instructor") && (
+          {(session?.user?.role === "admin" ||
+            session?.user?.role === "instructor") && (
             <Card>
               <CardHeader>
                 <CardTitle>Exam Access (Batch PINs)</CardTitle>
@@ -293,10 +292,15 @@ export function ExamDetailsView({ exam }: ExamDetailsViewProps) {
                 {exam.examGroups && exam.examGroups.length > 0 ? (
                   exam.examGroups.map((eg) => (
                     <div key={eg.id}>
-                      <span className="block text-sm font-medium">{eg.group.name}</span>
+                      <span className="block text-sm font-medium">
+                        {eg.group.name}
+                      </span>
                       <div className="flex flex-col gap-1 mt-1">
                         <span className="text-xs text-muted-foreground">
-                          PIN: <span className="font-mono font-bold text-primary">{eg.pin || "N/A"}</span>
+                          PIN:{" "}
+                          <span className="font-mono font-bold text-primary">
+                            {eg.pin || "N/A"}
+                          </span>
                         </span>
                         {eg.startTime && (
                           <span className="text-xs text-muted-foreground">
@@ -312,7 +316,9 @@ export function ExamDetailsView({ exam }: ExamDetailsViewProps) {
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-muted-foreground italic">No groups assigned to this exam.</p>
+                  <p className="text-sm text-muted-foreground italic">
+                    No groups assigned to this exam.
+                  </p>
                 )}
               </CardContent>
             </Card>

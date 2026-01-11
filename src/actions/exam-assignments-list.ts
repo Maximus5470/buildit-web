@@ -1,10 +1,10 @@
 "use server";
 
+import { desc, eq } from "drizzle-orm";
 import db from "@/db";
 import { examAssignments } from "@/db/schema/assignments";
 import { user } from "@/db/schema/auth";
 import { exams } from "@/db/schema/exams";
-import { eq, desc, sql } from "drizzle-orm";
 
 export async function getExamAssignmentsList() {
   const assignments = await db
@@ -38,8 +38,10 @@ export async function getExamAssignmentsList() {
 
 export async function deleteExamAssignment(assignmentId: string) {
   try {
-    await db.delete(examAssignments).where(eq(examAssignments.id, assignmentId));
-    
+    await db
+      .delete(examAssignments)
+      .where(eq(examAssignments.id, assignmentId));
+
     return {
       success: true,
       message: "Assignment deleted successfully",

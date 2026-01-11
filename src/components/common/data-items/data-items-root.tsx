@@ -4,7 +4,6 @@ import { LayoutGrid, List, Plus, RotateCcw, Search } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import { type ReactNode, useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -36,6 +35,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import type { DataItemsViewProps, ViewMode } from "./types";
 
 // If useDebounce hook doesn't exist, we can implement a simple effect inside,
@@ -171,7 +171,11 @@ export function DataItemsView<T extends { id: string }>({
       </div>
 
       {/* Header & Controls Card */}
-      {(extraHeader || filters.length > 0 || sortOptions.length > 0 || availableViews.length > 1 || localSearch !== undefined) && (
+      {(extraHeader ||
+        filters.length > 0 ||
+        sortOptions.length > 0 ||
+        availableViews.length > 1 ||
+        localSearch !== undefined) && (
         <div className="flex flex-col gap-4 bg-card p-4 rounded-lg border shadow-sm flex-none">
           {extraHeader}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
@@ -260,13 +264,21 @@ export function DataItemsView<T extends { id: string }>({
       )}
 
       {/* Content */}
-      <div className={cn("flex-1 min-h-0 border rounded-md bg-background flex flex-col", currentView === "card" && "overflow-auto")}>
+      <div
+        className={cn(
+          "flex-1 min-h-0 border rounded-md bg-background flex flex-col",
+          currentView === "card" && "overflow-auto",
+        )}
+      >
         {data.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground h-full">
             <p>No items found</p>
           </div>
         ) : currentView === "table" && columns ? (
-          <Table className="border-separate border-spacing-0" containerClassName="flex-1 overflow-auto">
+          <Table
+            className="border-separate border-spacing-0"
+            containerClassName="flex-1 overflow-auto"
+          >
             <TableHeader className="sticky top-0 bg-background z-10 shadow-sm [&_th]:bg-background">
               <TableRow>
                 <TableHead className="w-[50px] text-center">#</TableHead>
@@ -318,18 +330,16 @@ export function DataItemsView<T extends { id: string }>({
       </div>
 
       {/* Pagination */}
-      {
-        totalPages > 1 && (
-          <div className="flex-none py-2 border-t bg-background">
-            <PaginationSection
-              page={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-            />
-          </div>
-        )
-      }
-    </div >
+      {totalPages > 1 && (
+        <div className="flex-none py-2 border-t bg-background">
+          <PaginationSection
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
+        </div>
+      )}
+    </div>
   );
 }
 

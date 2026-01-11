@@ -1,9 +1,9 @@
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import db from "@/db";
-import { questionCollections } from "@/db/schema";
 import { getQuestionsInCollection } from "@/actions/question-collections-list";
 import { CollectionDetailsView } from "@/components/layouts/collections/collection-details-view";
+import db from "@/db";
+import { questionCollections } from "@/db/schema";
 
 interface PageProps {
   params: Promise<{
@@ -28,7 +28,11 @@ export default async function CollectionDetailsPage({
     notFound();
   }
 
-  const { data: questions, total } = await getQuestionsInCollection(id, page, 10);
+  const { data: questions, total } = await getQuestionsInCollection(
+    id,
+    page,
+    10,
+  );
 
   return (
     <CollectionDetailsView

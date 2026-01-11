@@ -1,8 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
   boolean,
-  foreignKey,
-  index,
   json,
   jsonb,
   pgTable,
@@ -17,19 +15,16 @@ import { difficulty, problemType } from "./enums";
 // Kept for backward compatibility, will be removed after migration
 
 // Modern question-based tables
-export const questions = pgTable(
-  "questions",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    title: text("title").notNull(),
-    problemStatement: text("problem_statement").notNull(),
-    difficulty: difficulty("difficulty").notNull(),
-    allowedLanguages: json("allowed_languages").default(["java"]),
-    driverCode: json("driver_code")
-      .$type<Record<string, string>>()
-      .default({ java: "" }),
-  },
-);
+export const questions = pgTable("questions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  problemStatement: text("problem_statement").notNull(),
+  difficulty: difficulty("difficulty").notNull(),
+  allowedLanguages: json("allowed_languages").default(["java"]),
+  driverCode: json("driver_code")
+    .$type<Record<string, string>>()
+    .default({ java: "" }),
+});
 
 export const questionTestCases = pgTable("question_test_cases", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -64,9 +59,9 @@ export const problems = pgTable("problems", {
   title: text("title").notNull(),
   slug: text("slug").unique().notNull(),
   description: text("description").notNull(),
-  content: jsonb("content").$type<any>().notNull(),
-  driverCode: jsonb("driver_code").$type<any>(),
-  gradingMetadata: jsonb("grading_metadata").$type<any>(),
+  content: jsonb("content").$type<Record<string, unknown>>().notNull(),
+  driverCode: jsonb("driver_code").$type<Record<string, string>>(),
+  gradingMetadata: jsonb("grading_metadata").$type<Record<string, unknown>>(),
   public: boolean("public").default(true).notNull(),
   createdBy: text("created_by")
     .notNull()

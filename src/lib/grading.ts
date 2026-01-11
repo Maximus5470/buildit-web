@@ -1,9 +1,25 @@
-export type GradingStrategy = "linear" | "difficulty_based" | "count_based" | "standard_20_40_50";
+export type GradingStrategy =
+  | "linear"
+  | "difficulty_based"
+  | "count_based"
+  | "standard_20_40_50";
 export type Difficulty = "easy" | "medium" | "hard";
+
+export type GradingConfig = {
+  marks?: number;
+  easy?: number;
+  medium?: number;
+  hard?: number;
+  enablePartialPoints?: boolean;
+  rules?: {
+    count: number;
+    marks: number;
+  }[];
+};
 
 export interface GradingInput {
   strategy: GradingStrategy | string;
-  config: any;
+  config: GradingConfig;
   passedQuestionIds: string[];
   questionDifficulties?: Record<string, Difficulty>;
   questionScores?: Record<string, number>; // questionId -> percentage passed (0.0 to 1.0)
@@ -34,7 +50,7 @@ export function calculateGradingScore(input: GradingInput): number {
 
     if (allowPartial && questionScores) {
       // Iterate over all questions we have a score for
-      for (const [qId, percentage] of Object.entries(questionScores)) {
+      for (const [_qId, percentage] of Object.entries(questionScores)) {
         score += percentage * marksPerQuestion;
       }
     } else {

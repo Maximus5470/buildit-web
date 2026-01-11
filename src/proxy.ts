@@ -47,7 +47,7 @@ export async function proxy(request: NextRequest) {
 
   // Check if route requires instructor/admin role
   const isInstructorRoute = instructorOnlyRoutes.some(
-    (route) => pathname === route || pathname.startsWith(route + "/"),
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
   );
 
   if (isInstructorRoute) {

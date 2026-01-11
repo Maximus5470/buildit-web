@@ -11,12 +11,20 @@ import type { Problem } from "@/types/problem";
 type Submission = {
   id: string;
   problemId: string;
-  status: "pending" | "accepted" | "wrong_answer" | "time_limit_exceeded" | "memory_limit_exceeded" | "compile_error" | "runtime_error" | "manual_review";
+  status:
+    | "pending"
+    | "accepted"
+    | "wrong_answer"
+    | "time_limit_exceeded"
+    | "memory_limit_exceeded"
+    | "compile_error"
+    | "runtime_error"
+    | "manual_review";
   score: number;
   runtimeMs?: number;
   memoryKb?: number;
   createdAt: Date;
-  answerData: any;
+  answerData: unknown;
 };
 
 export const getProblem = cache(
@@ -43,6 +51,10 @@ export const getProblem = cache(
       difficulty: problem.difficulty as "easy" | "medium" | "hard",
       content: problem.content as Problem["content"],
       driverCode: problem.driverCode as Record<string, string>,
+      gradingMetadata: (problem.gradingMetadata ?? {}) as Record<
+        string,
+        unknown
+      >,
       testCases: testCasesToShow,
     };
   },
@@ -110,10 +122,7 @@ export const getUserSubmissions = async (
 
   const userSubmissions = await db.query.submissions.findMany({
     where: (table, { eq, and }) =>
-      and(
-        eq(table.problemId, problemId),
-        eq(table.userId, session.user.id),
-      ),
+      and(eq(table.problemId, problemId), eq(table.userId, session.user.id)),
     orderBy: desc(submissions.createdAt),
   });
 

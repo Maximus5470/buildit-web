@@ -35,7 +35,7 @@ export function calculateGradingScore(input: GradingInput): number {
 
     if (allowPartial && questionScores) {
       // Iterate over all questions we have a score for
-      for (const [qId, percentage] of Object.entries(questionScores)) {
+      for (const [_qId, percentage] of Object.entries(questionScores)) {
         score += percentage * marksPerQuestion;
       }
     } else {

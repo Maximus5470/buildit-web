@@ -80,7 +80,7 @@ async function seedUsers() {
   console.log(`🚀 Spawning ${numCPUs} workers to process users...`);
 
   const chunks = chunkArray(records, numCPUs);
-  
+
   let totalProcessed = 0;
   let totalCreated = 0;
   let totalUpdated = 0;
@@ -108,15 +108,19 @@ async function seedUsers() {
         if (msg.type === "progress") {
           totalProcessed++;
           if (totalProcessed % 50 === 0 || totalProcessed === records.length) {
-            console.log(`Progress: ${totalProcessed}/${records.length} users processed...`);
+            console.log(
+              `Progress: ${totalProcessed}/${records.length} users processed...`,
+            );
           }
         } else if (msg.type === "done") {
           totalCreated += msg.created || 0;
           totalUpdated += msg.updated || 0;
           totalErrors += msg.errors?.length || 0;
-          
+
           if (msg.errors && msg.errors.length > 0) {
-            console.error(`Worker ${index} encountered ${msg.errors.length} errors`);
+            console.error(
+              `Worker ${index} encountered ${msg.errors.length} errors`,
+            );
           }
           resolve();
         } else if (msg.type === "fatal") {

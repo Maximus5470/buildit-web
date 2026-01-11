@@ -1,6 +1,7 @@
 "use client";
 
 import { History, RefreshCcw } from "lucide-react";
+import NextImage from "next/image";
 import { useEffect, useState } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -14,7 +15,7 @@ import {
 } from "@/lib/exam/history-actions";
 import { cn } from "@/lib/utils";
 import { useExamStore } from "@/stores/exam-store";
-import { Problem } from "@/types/problem";
+import type { Problem } from "@/types/problem";
 
 interface ProblemViewerProps {
   question: Pick<Problem, "id" | "problemStatement">;
@@ -123,10 +124,7 @@ export function ProblemViewer({ question, assignmentId }: ProblemViewerProps) {
                     ),
                     p: ({ className, ...props }) => (
                       <p
-                        className={cn(
-                          "leading-7 not-first:mt-6",
-                          className,
-                        )}
+                        className={cn("leading-7 not-first:mt-6", className)}
                         {...props}
                       />
                     ),
@@ -159,11 +157,13 @@ export function ProblemViewer({ question, assignmentId }: ProblemViewerProps) {
                       alt,
                       ...props
                     }: React.ImgHTMLAttributes<HTMLImageElement>) => (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <NextImage
                         className={cn("rounded-md border", className)}
-                        alt={alt}
-                        {...props}
+                        alt={alt || "Image"}
+                        width={600}
+                        height={400}
+                        style={{ maxWidth: "100%", height: "auto" }}
+                        {...(props as any)}
                       />
                     ),
                     hr: ({ ...props }) => (
@@ -311,12 +311,13 @@ function SubmissionsList({
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <span
-                    className={`text-sm font-semibold capitalize ${sub.verdict === "passed"
+                    className={`text-sm font-semibold capitalize ${
+                      sub.verdict === "passed"
                         ? "text-green-500"
                         : sub.verdict === "failed"
                           ? "text-red-500"
                           : "text-amber-500"
-                      }`}
+                    }`}
                   >
                     {sub.verdict.replace("_", " ")}
                   </span>

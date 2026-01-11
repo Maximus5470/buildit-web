@@ -8,7 +8,9 @@ import { ChevronDown, Loader2, Play, Send } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import ThemeToggle from "@/components/common/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,16 +29,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 import {
   getRuntimes,
   runCode,
   runWithCustomInput,
 } from "@/lib/exam/code-actions";
 import { useExamStore } from "@/stores/exam-store";
-import { Problem, TestcaseResult } from "@/types/problem";
-import ThemeToggle from "@/components/common/theme-toggle";
-import { ButtonGroup } from "@/components/ui/button-group";
+import type { Problem, TestcaseResult } from "@/types/problem";
 import TestCaseConsole from "./test-case-console";
 
 interface Runtime {
@@ -196,7 +195,7 @@ export function CodePlayground({
 
   const defaultCode =
     (question.driverCode as Record<string, string> | null)?.[
-    selectedLanguage
+      selectedLanguage
     ] || "";
 
   // Access code for specific language

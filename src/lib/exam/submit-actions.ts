@@ -4,8 +4,12 @@ import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import db from "@/db";
-import { assignmentSubmissions, examAssignments } from "@/db/schema";
-import { questions, questionTestCases } from "@/db/schema";
+import {
+  assignmentSubmissions,
+  examAssignments,
+  questions,
+  questionTestCases,
+} from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { calculateGradingScore } from "@/lib/grading";
 import {
@@ -144,7 +148,7 @@ export async function submitQuestion(
     }
 
     // 6. Insert Submission
-    const insertResult = await db.insert(assignmentSubmissions).values({
+    const _insertResult = await db.insert(assignmentSubmissions).values({
       assignmentId: input.assignmentId,
       questionId: input.questionId,
       language: input.language,

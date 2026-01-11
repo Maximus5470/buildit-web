@@ -23,9 +23,11 @@ export const getExam = cache(async (examId: string, userId?: string) => {
     const userGroupsResult = await db.query.userGroupMembers.findMany({
       where: eq(userGroupMembers.userId, userId),
     });
-    const userGroupIds = userGroupsResult.map(ug => ug.groupId);
+    const userGroupIds = userGroupsResult.map((ug) => ug.groupId);
 
-    const batchSchedule = exam.examGroups.find(eg => userGroupIds.includes(eg.groupId));
+    const batchSchedule = exam.examGroups.find((eg) =>
+      userGroupIds.includes(eg.groupId),
+    );
     if (batchSchedule && (batchSchedule.startTime || batchSchedule.endTime)) {
       return {
         ...exam,

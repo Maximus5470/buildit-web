@@ -53,9 +53,7 @@ export async function finishExam(assignmentId: string) {
       },
     });
 
-    const allCompleted = allAssignments.every(
-      (a) => a.status === "completed",
-    );
+    const allCompleted = allAssignments.every((a) => a.status === "completed");
 
     // If all assignments are completed, update exam status to "ended"
     if (allCompleted) {

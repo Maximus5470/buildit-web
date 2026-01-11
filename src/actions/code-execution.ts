@@ -1,12 +1,12 @@
 "use server";
 
 import {
+  mapTestCases,
   executeCode as turboExecute,
   getRuntimes as turboGetRuntimes,
-  mapTestCases,
 } from "@/lib/turbo";
 
-const USE_TURBO = true;
+const _USE_TURBO = true;
 
 export type FileContent = {
   name?: string;
@@ -129,19 +129,22 @@ export async function executeCode(
           }
         : undefined,
     };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Turbo execution error:", error);
     return {
       language: payload.language,
       version: payload.version,
       run: {
         stdout: "",
-        stderr: error.message || "Unknown error occurred",
-        output: error.message || "Unknown error occurred",
+        stderr:
+          error instanceof Error ? error.message : "Unknown error occurred",
+        output:
+          error instanceof Error ? error.message : "Unknown error occurred",
         code: -1,
         signal: null,
       },
-      message: error.message,
+      message:
+        error instanceof Error ? error.message : "Unknown error occurred",
     };
   }
 }
@@ -204,7 +207,7 @@ export async function executeTestcases(
         : undefined,
       testcases: testcaseResults,
     };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Turbo testcases execution error:", error);
     return {
       language: payload.language,
@@ -217,7 +220,8 @@ export async function executeTestcases(
         passed: false,
         run_details: {
           stdout: "",
-          stderr: error.message || "Unknown error occurred",
+          stderr:
+            error instanceof Error ? error.message : "Unknown error occurred",
           code: -1,
           signal: null,
           memory: 0,
@@ -225,7 +229,8 @@ export async function executeTestcases(
           wall_time: 0,
         },
       })),
-      message: error.message,
+      message:
+        error instanceof Error ? error.message : "Unknown error occurred",
     };
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { BookOpen, Calendar, FileText } from "lucide-react";
+import { BookOpen, Calendar } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DataItemsView } from "@/components/common/data-items/data-items-root";
@@ -49,8 +49,8 @@ export function CollectionsView({ data, total, type }: CollectionsViewProps) {
       accessorKey: (item: QuestionCollection) => (
         <div className="flex gap-1 flex-wrap">
           {item.tags && item.tags.length > 0 ? (
-            item.tags.slice(0, 3).map((tag, i) => (
-              <Badge key={i} variant="secondary" className="text-xs">
+            item.tags.slice(0, 3).map((tag) => (
+              <Badge key={tag} variant="secondary" className="text-xs">
                 {tag}
               </Badge>
             ))
@@ -81,8 +81,17 @@ export function CollectionsView({ data, total, type }: CollectionsViewProps) {
   ];
 
   const renderCard = (item: QuestionCollection) => (
+    // biome-ignore lint/a11y/useSemanticElements: Complex card layout
     <div
+      role="button"
+      tabIndex={0}
       onClick={() => router.push(`/collections/${item.id}`)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          router.push(`/collections/${item.id}`);
+        }
+      }}
       className="flex flex-col h-full border rounded-xl p-6 hover:border-primary/50 transition-colors bg-card text-card-foreground shadow-sm cursor-pointer"
     >
       <div className="flex justify-between items-start mb-4">
@@ -99,8 +108,8 @@ export function CollectionsView({ data, total, type }: CollectionsViewProps) {
 
       <div className="flex gap-1 flex-wrap mb-4">
         {item.tags && item.tags.length > 0 ? (
-          item.tags.slice(0, 3).map((tag, i) => (
-            <Badge key={i} variant="secondary" className="text-xs">
+          item.tags.slice(0, 3).map((tag) => (
+            <Badge key={tag} variant="secondary" className="text-xs">
               {tag}
             </Badge>
           ))

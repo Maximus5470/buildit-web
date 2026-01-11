@@ -1,21 +1,18 @@
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
 import {
   BookOpen,
   Clock,
   Code2,
-  FileText,
   FileCheck,
+  FileText,
   History,
   LayoutDashboard,
   List,
-  Lock,
   Play,
-  Target,
   Trophy,
   Users,
 } from "lucide-react";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import PinProtection from "@/components/auth/pin-protection";
 import AppHeader from "@/components/common/app-header";
 import AppSidebar, {
@@ -23,6 +20,7 @@ import AppSidebar, {
   type SidebarSection,
 } from "@/components/common/app-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { auth } from "@/lib/auth";
 
 const mainItems: MenuItem[] = [
   {
@@ -144,7 +142,8 @@ export default async function DashboardLayout({
 
   const filteredAdminItems = adminItems.filter((item) => {
     // Admins and Instructors can see Submissions
-    if (item.label === "Submissions") return role === "admin" || role === "instructor";
+    if (item.label === "Submissions")
+      return role === "admin" || role === "instructor";
     // Only Admins see User Management
     return role === "admin";
   });

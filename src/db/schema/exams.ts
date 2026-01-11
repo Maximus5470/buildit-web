@@ -5,19 +5,15 @@ import {
   json,
   jsonb,
   pgTable,
-  primaryKey,
   text,
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { GradingConfig } from "@/lib/grading";
+import type { ExamConfig } from "@/types/exam-config";
 import { user } from "./auth";
-import {
-  examStatusEnum,
-  gradingStrategyEnum,
-  strategyTypeEnum,
-} from "./enums";
+import { examStatusEnum, gradingStrategyEnum, strategyTypeEnum } from "./enums";
 import { userGroups } from "./groups";
-import { problems } from "./problems";
 import { examCollections } from "./question-collections";
 
 export const exams = pgTable(
@@ -36,9 +32,9 @@ export const exams = pgTable(
     gradingStrategy: gradingStrategyEnum("grading_strategy")
       .default("standard_20_40_50")
       .notNull(),
-    strategyConfig: json("strategy_config"),
-    gradingConfig: json("grading_config"),
-    config: jsonb(),
+    strategyConfig: json("strategy_config").$type<Record<string, unknown>>(),
+    gradingConfig: json("grading_config").$type<GradingConfig>(),
+    config: jsonb().$type<ExamConfig>(),
     createdBy: text("created_by").notNull(),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at")

@@ -1,9 +1,9 @@
 "use server";
 
+import { inArray } from "drizzle-orm";
 import { headers } from "next/headers";
 import db from "@/db";
-import { inArray } from "drizzle-orm";
-import { exams, examGroups, userGroups } from "@/db/schema";
+import { examGroups, exams, userGroups } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import type { CreateExamData } from "@/types/exam";
 
@@ -21,11 +21,23 @@ export async function createExam(data: CreateExamData) {
     let globalStartTime = data.startTime;
     let globalEndTime = data.endTime;
 
-    if (!globalStartTime && data.groupSchedules && data.groupSchedules.length > 0) {
-      globalStartTime = new Date(Math.min(...data.groupSchedules.map(gs => gs.startTime.getTime())));
+    if (
+      !globalStartTime &&
+      data.groupSchedules &&
+      data.groupSchedules.length > 0
+    ) {
+      globalStartTime = new Date(
+        Math.min(...data.groupSchedules.map((gs) => gs.startTime.getTime())),
+      );
     }
-    if (!globalEndTime && data.groupSchedules && data.groupSchedules.length > 0) {
-      globalEndTime = new Date(Math.max(...data.groupSchedules.map(gs => gs.endTime.getTime())));
+    if (
+      !globalEndTime &&
+      data.groupSchedules &&
+      data.groupSchedules.length > 0
+    ) {
+      globalEndTime = new Date(
+        Math.max(...data.groupSchedules.map((gs) => gs.endTime.getTime())),
+      );
     }
 
     const [exam] = await db
@@ -33,7 +45,8 @@ export async function createExam(data: CreateExamData) {
       .values({
         title: data.title,
         startTime: globalStartTime || new Date(), // Fallback if no schedules
-        endTime: globalEndTime || new Date(Date.now() + data.durationMinutes * 60000),
+        endTime:
+          globalEndTime || new Date(Date.now() + data.durationMinutes * 60000),
         durationMinutes: data.durationMinutes,
         config: data.config,
         createdBy: session.user.id,
@@ -48,8 +61,10 @@ export async function createExam(data: CreateExamData) {
         where: inArray(userGroups.id, data.groupIds),
       });
 
-      const groupAssignments = assignedGroups.map(group => {
-        const schedule = data.groupSchedules?.find(gs => gs.groupId === group.id);
+      const groupAssignments = assignedGroups.map((group) => {
+        const schedule = data.groupSchedules?.find(
+          (gs) => gs.groupId === group.id,
+        );
         return {
           examId: exam.id,
           groupId: group.id,
@@ -61,8 +76,8 @@ export async function createExam(data: CreateExamData) {
 
       await db.insert(examGroups).values(groupAssignments);
 
-      generatedPins = groupAssignments.map(ga => {
-        const group = assignedGroups.find(g => g.id === ga.groupId);
+      generatedPins = groupAssignments.map((ga) => {
+        const group = assignedGroups.find((g) => g.id === ga.groupId);
         return {
           groupName: group?.name || "Unknown Group",
           pin: ga.pin,

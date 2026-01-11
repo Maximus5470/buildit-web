@@ -1,32 +1,10 @@
-import { eq } from "drizzle-orm";
-import { readdir, readFile } from "fs/promises";
-import { join } from "path";
+import { readdir, readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { parse } from "csv-parse/sync";
+import { eq } from "drizzle-orm";
 import db from "@/db";
 import { user } from "@/db/schema";
 import { auth } from "@/lib/auth";
-
-interface StudentCSVRow {
-  rollNumber: string;
-  name: string;
-  email: string;
-  username: string;
-  displayUsername?: string;
-  image?: string;
-  dateOfBirth?: string;
-  semester?: string;
-  section?: string;
-  branch?: string;
-  regulation?: string;
-}
-
-interface InstructorCSVRow {
-  email: string;
-  name: string;
-  username: string;
-  displayUsername?: string;
-  image?: string;
-}
 
 const DEFAULT_PASSWORD = "password1234";
 const CSV_DIRECTORY = join(process.cwd(), "data", "csv");
@@ -56,7 +34,7 @@ async function processStudentsCSV(filePath: string) {
         const foundKey = recordKeys.find(
           (k) =>
             k.toLowerCase().replace(/[^a-z0-9]/g, "") ===
-            key.toLowerCase().replace(/[^a-z0-9]/g, "")
+            key.toLowerCase().replace(/[^a-z0-9]/g, ""),
         );
         if (foundKey && record[foundKey]) return record[foundKey];
       }
@@ -90,8 +68,8 @@ async function processStudentsCSV(filePath: string) {
     if (!email || !name) {
       console.log(
         `⚠️  Skipping invalid row (missing email/unique ID or name): ${JSON.stringify(
-          record
-        )}`
+          record,
+        )}`,
       );
       skipCount++;
       continue;
@@ -115,7 +93,7 @@ async function processStudentsCSV(filePath: string) {
 
       if (existingUser) {
         console.log(
-          `  User ${username} (${email}) already exists, updating data...`
+          `  User ${username} (${email}) already exists, updating data...`,
         );
         await db
           .update(user)
@@ -136,7 +114,7 @@ async function processStudentsCSV(filePath: string) {
       const image = await generateAvatar(username);
 
       let password = DEFAULT_PASSWORD;
-      if (dob && !isNaN(dob.getTime())) {
+      if (dob && !Number.isNaN(dob.getTime())) {
         const d = String(dob.getDate()).padStart(2, "0");
         const m = String(dob.getMonth() + 1).padStart(2, "0");
         const y = dob.getFullYear();
@@ -176,7 +154,7 @@ async function processStudentsCSV(filePath: string) {
   }
 
   console.log(
-    `\nStudents Summary: ${successCount} processed (created/updated), ${skipCount} skipped`
+    `\nStudents Summary: ${successCount} processed (created/updated), ${skipCount} skipped`,
   );
 }
 
@@ -201,7 +179,7 @@ async function processInstructorsCSV(filePath: string) {
         const foundKey = recordKeys.find(
           (k) =>
             k.toLowerCase().replace(/[^a-z0-9]/g, "") ===
-            key.toLowerCase().replace(/[^a-z0-9]/g, "")
+            key.toLowerCase().replace(/[^a-z0-9]/g, ""),
         );
         if (foundKey && record[foundKey]) return record[foundKey];
       }
@@ -269,7 +247,7 @@ async function processInstructorsCSV(filePath: string) {
   }
 
   console.log(
-    `\nInstructors Summary: ${successCount} created, ${skipCount} skipped`
+    `\nInstructors Summary: ${successCount} created, ${skipCount} skipped`,
   );
 }
 
@@ -284,7 +262,7 @@ async function seedFromCSV() {
   try {
     const files = await readdir(CSV_DIRECTORY);
     const csvFiles = files.filter((file) =>
-      file.toLowerCase().endsWith(".csv")
+      file.toLowerCase().endsWith(".csv"),
     );
 
     if (csvFiles.length === 0) {
@@ -295,7 +273,7 @@ async function seedFromCSV() {
     console.log(
       `\nFound ${csvFiles.length} CSV file(s):\n${csvFiles
         .map((f) => `  - ${f}`)
-        .join("\n")}`
+        .join("\n")}`,
     );
 
     for (const file of csvFiles) {
@@ -312,12 +290,12 @@ async function seedFromCSV() {
         await processInstructorsCSV(filePath);
       } else {
         console.log(
-          `\n⚠️  Skipping ${file} - filename should contain 'student' or 'instructor' (or 'aero' etc for students)`
+          `\n⚠️  Skipping ${file} - filename should contain 'student' or 'instructor' (or 'aero' etc for students)`,
         );
       }
     }
 
-    console.log("\n" + "=".repeat(60));
+    console.log(`\n${"=".repeat(60)}`);
     console.log("CSV Seeding completed successfully!");
     console.log("=".repeat(60));
   } catch (error) {

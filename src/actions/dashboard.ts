@@ -1,9 +1,15 @@
 "use server";
 
-import { count, desc, eq, inArray, sql } from "drizzle-orm";
+import { count, desc, eq, sql } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 import db from "@/db";
-import { exams, questions, assignmentSubmissions, user, dailyProblems } from "@/db/schema";
+import {
+  assignmentSubmissions,
+  dailyProblems,
+  exams,
+  questions,
+  user,
+} from "@/db/schema";
 
 export const getStudentDashboardData = unstable_cache(
   async (userId: string, userName: string) => {
@@ -45,7 +51,9 @@ export const getStudentDashboardData = unstable_cache(
     });
 
     // Submissions and solved counts
-    const totalSolved = userSubmissions.filter((s) => s.verdict === "passed").length;
+    const totalSolved = userSubmissions.filter(
+      (s) => s.verdict === "passed",
+    ).length;
     const totalSubmissions = userSubmissions.length;
 
     const upcomingExams = await db
@@ -131,7 +139,7 @@ export const getAdminDashboardData = unstable_cache(
 
 export async function ensureDailyProblem() {
   const today = new Date().toISOString().split("T")[0];
-  
+
   // Check if there's already a daily problem for today
   const existingDailyProblem = await db
     .select({
@@ -156,27 +164,32 @@ export async function ensureDailyProblem() {
   const recentDailyProblems = await db
     .select({ questionId: dailyProblems.questionId })
     .from(dailyProblems)
-    .where(sql`${dailyProblems.date} >= ${thirtyDaysAgo.toISOString().split("T")[0]}`);
+    .where(
+      sql`${dailyProblems.date} >= ${thirtyDaysAgo.toISOString().split("T")[0]}`,
+    );
 
   const recentQuestionIds = recentDailyProblems.map((dp) => dp.questionId);
 
   // Get all available questions
   const allQuestions = await db.select().from(questions);
-  
+
   if (allQuestions.length === 0) {
     throw new Error("No questions available for daily problem");
   }
 
   // Filter out recently used questions
-  const availableQuestions = recentQuestionIds.length > 0
-    ? allQuestions.filter((q) => !recentQuestionIds.includes(q.id))
-    : allQuestions;
+  const availableQuestions =
+    recentQuestionIds.length > 0
+      ? allQuestions.filter((q) => !recentQuestionIds.includes(q.id))
+      : allQuestions;
 
   // If all questions were used recently, use any question
-  const questionPool = availableQuestions.length > 0 ? availableQuestions : allQuestions;
+  const questionPool =
+    availableQuestions.length > 0 ? availableQuestions : allQuestions;
 
   // Select a random question
-  const randomQuestion = questionPool[Math.floor(Math.random() * questionPool.length)];
+  const randomQuestion =
+    questionPool[Math.floor(Math.random() * questionPool.length)];
 
   // Create new daily problem
   const [newDailyProblem] = await db

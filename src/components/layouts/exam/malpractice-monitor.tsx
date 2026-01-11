@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useExamSecurity, ViolationType } from "@/hooks/exam/use-exam-security";
+import { useExamSecurity } from "@/hooks/exam/use-exam-security";
 
 // This component now primarily handles the visual Blocking/Warning interface
 // and ensures Fullscreen is active.
@@ -23,7 +23,7 @@ export function MalpracticeMonitor({
   const [showTabSwitchDialog, setShowTabSwitchDialog] = useState(false);
 
   // Listen to violations and show blocking dialog for tab switches
-  const {} = useExamSecurity((event) => {
+  useExamSecurity((event) => {
     if (event.type === "tab_switch" && event.isSevere) {
       setShowTabSwitchDialog(true);
     }
@@ -89,14 +89,14 @@ export function MalpracticeMonitor({
 
       {/* Tab Switch Dialog */}
       <AlertDialog open={showTabSwitchDialog}>
-        <AlertDialogContent className="z-[9999]">
+        <AlertDialogContent className="z-9999">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-destructive">
               ⚠️ Tab Switch Detected
             </AlertDialogTitle>
             <AlertDialogDescription>
-              You switched tabs or minimized the exam window. This is a violation
-              of exam rules and has been recorded.
+              You switched tabs or minimized the exam window. This is a
+              violation of exam rules and has been recorded.
               <br />
               <br />
               <span className="font-semibold text-foreground">

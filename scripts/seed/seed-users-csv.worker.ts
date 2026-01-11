@@ -22,13 +22,12 @@ interface WorkerData {
   workerIndex: number;
 }
 
-const { records, groupCache, workerIndex } = workerData as WorkerData;
+const { records, groupCache } = workerData as WorkerData;
 
 async function processUsers() {
-  let processed = 0;
   let created = 0;
   let updated = 0;
-  const errors: { email: string; error: any }[] = [];
+  const errors: { email: string; error: unknown }[] = [];
 
   for (const record of records) {
     try {
@@ -70,8 +69,13 @@ async function processUsers() {
             .where(eq(user.id, userId));
           created++;
         }
-      } catch (error: any) {
-        if (error?.body?.message?.includes("already exists")) {
+      } catch (error: unknown) {
+        if (
+          error &&
+          typeof error === "object" &&
+          "body" in error &&
+          (error as any).body?.message?.includes("already exists")
+        ) {
           // If user exists, fetch ID from DB and update fields
           const existingUser = await db.query.user.findFirst({
             where: eq(user.email, email),
@@ -99,25 +103,26 @@ async function processUsers() {
       // Add user to group if specified
       if (userId && record.UserGroup && groupCache[record.UserGroup]) {
         const groupId = groupCache[record.UserGroup];
-        const isMember = await db.query.userGroupMembers.findFirst({
-          where: (members, { and, eq }) =>
-            and(eq(members.userId, userId!), eq(members.groupId, groupId)),
-        });
-
-        if (!isMember) {
-          await db.insert(userGroupMembers).values({
-            userId,
-            groupId,
+        if (groupId) {
+          const isMember = await db.query.userGroupMembers.findFirst({
+            where: (members, { and, eq }) =>
+              and(eq(members.userId, userId), eq(members.groupId, groupId)),
           });
+
+          if (!isMember) {
+            await db.insert(userGroupMembers).values({
+              userId,
+              groupId,
+            });
+          }
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       errors.push({
         email: `${record.RollNo}@iare.ac.in`,
-        error: err?.message || err,
+        error: err instanceof Error ? err.message : String(err),
       });
     } finally {
-      processed++;
       if (parentPort) {
         parentPort.postMessage({ type: "progress", value: 1 });
       }

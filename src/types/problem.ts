@@ -12,9 +12,9 @@ export interface Problem {
   title: string;
   slug: string;
   description: string;
-  content: any;
+  content: Record<string, unknown>;
   driverCode: Record<string, string> | null;
-  gradingMetadata: any;
+  gradingMetadata: Record<string, unknown>;
   public: boolean;
   createdBy: string;
   createdAt: Date;

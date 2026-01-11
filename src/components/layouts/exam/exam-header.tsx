@@ -2,7 +2,7 @@
 
 import { Clock, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -41,22 +41,25 @@ export function ExamHeader({
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  const submitExam = async (force: boolean = false) => {
-    if (isFinishing) return;
+  const submitExam = useCallback(
+    async (force: boolean = false) => {
+      if (isFinishing) return;
 
-    setIsFinishing(true);
-    toast.info(force ? "Time's up! Submitting exam..." : "Finishing exam...");
+      setIsFinishing(true);
+      toast.info(force ? "Time's up! Submitting exam..." : "Finishing exam...");
 
-    const result = await finishExam(assignmentId);
+      const result = await finishExam(assignmentId);
 
-    if (result.success && result.redirectPath) {
-      toast.success("Exam submitted successfully");
-      router.push(result.redirectPath);
-    } else {
-      toast.error(result.error || "Failed to submit exam");
-      setIsFinishing(false);
-    }
-  };
+      if (result.success && result.redirectPath) {
+        toast.success("Exam submitted successfully");
+        router.push(result.redirectPath);
+      } else {
+        toast.error(result.error || "Failed to submit exam");
+        setIsFinishing(false);
+      }
+    },
+    [assignmentId, isFinishing, router],
+  );
 
   useEffect(() => {
     if (!endTime) return;

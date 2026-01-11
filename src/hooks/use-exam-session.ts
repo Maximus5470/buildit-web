@@ -47,7 +47,9 @@ export function useExamSession({
     }
 
     // Attempted
-    const savedAttempted = localStorage.getItem(`exam-${assignmentId}-attempted`);
+    const savedAttempted = localStorage.getItem(
+      `exam-${assignmentId}-attempted`,
+    );
     if (savedAttempted) {
       try {
         const parsed = JSON.parse(savedAttempted);
@@ -65,7 +67,9 @@ export function useExamSession({
         if (result.success) {
           setIsEnded(true);
           toast.success(
-            auto ? "Time's up! Exam submitted." : "Exam submitted successfully.",
+            auto
+              ? "Time's up! Exam submitted."
+              : "Exam submitted successfully.",
           );
           if (result.redirectPath) {
             window.location.href = result.redirectPath;
@@ -146,7 +150,12 @@ export function useExamSession({
   const handleViolation = useCallback(
     async (type: string) => {
       try {
-        const result = await recordMalpractice(assignmentId, type, `${type} violation`, true);
+        const result = await recordMalpractice(
+          assignmentId,
+          type,
+          `${type} violation`,
+          true,
+        );
         if (onViolation && result.warningsLeft !== undefined) {
           const violationCount = 3 - result.warningsLeft;
           onViolation(violationCount);

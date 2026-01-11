@@ -5,6 +5,7 @@ import OnboardingClient from "@/components/layouts/exam/onboarding-client";
 import db from "@/db";
 import { examGroups, exams, userGroupMembers } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import type { Exam } from "@/types/exam";
 
 interface PageProps {
   params: Promise<{
@@ -41,13 +42,13 @@ export default async function OnboardingPage({ params }: PageProps) {
       const slots = await db.query.examGroups.findMany({
         where: and(
           eq(examGroups.examId, examId),
-          inArray(examGroups.groupId, groupIds)
+          inArray(examGroups.groupId, groupIds),
         ),
       });
       requiresPin = slots.some((s) => !!s.pin);
 
       // Find the relevant schedule for the user
-      batchSchedule = slots.find(s => s.startTime || s.endTime);
+      batchSchedule = slots.find((s) => s.startTime || s.endTime);
     }
   }
 
@@ -57,11 +58,11 @@ export default async function OnboardingPage({ params }: PageProps) {
   const activeEnd = batchSchedule?.endTime || exam.endTime;
 
   if (now < activeStart || now > activeEnd) {
-    // If not in time, we could redirect or just let OnboardingClient handle it 
+    // If not in time, we could redirect or just let OnboardingClient handle it
     // but the request was "can see their exam ONLY when the time criteria is met".
     // If they already have the link, they shouldn't see the onboarding details.
     notFound();
   }
 
-  return <OnboardingClient exam={exam} requiresPin={requiresPin} />;
+  return <OnboardingClient exam={exam as Exam} requiresPin={requiresPin} />;
 }

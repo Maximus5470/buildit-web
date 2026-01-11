@@ -5,6 +5,7 @@ import { Calendar, Clock, Info, Play, Users } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { DataItemsView } from "@/components/common/data-items/data-items-root";
 import {
   AlertDialog,
@@ -18,11 +19,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -30,18 +26,28 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { usePageName } from "@/hooks/use-page-name";
 import { useSession } from "@/lib/auth-client";
-import { toast } from "sonner";
 
-import { GetExamsParams, Exam } from "@/types/exam";
+import type { Exam, GetExamsParams } from "@/types/exam";
 
 interface ExamsViewProps {
   data: Exam[];
   total: number;
   initialParams?: GetExamsParams;
   error?: string | null;
-  terminationDetails?: any;
+  terminationDetails?: {
+    violationCount: number;
+    events?: Array<{
+      type: string;
+      timestamp: string | number | Date;
+    }>;
+  };
 }
 
 export function ExamsView({
@@ -69,7 +75,11 @@ export function ExamsView({
   };
 
   // Helper for Status Badge
-  const getStatus = (start: Date, end: Date, userSessionStatus?: string | null) => {
+  const getStatus = (
+    start: Date,
+    end: Date,
+    userSessionStatus?: string | null,
+  ) => {
     // If user has completed the exam, show as completed
     if (userSessionStatus === "completed") {
       return <Badge variant="secondary">Completed</Badge>;
@@ -98,7 +108,8 @@ export function ExamsView({
     },
     {
       header: "Status",
-      accessorKey: (item: Exam) => getStatus(item.startTime, item.endTime, item.userSessionStatus),
+      accessorKey: (item: Exam) =>
+        getStatus(item.startTime, item.endTime, item.userSessionStatus),
     },
     {
       header: "Start Time",
@@ -121,7 +132,9 @@ export function ExamsView({
     {
       header: "Actions",
       accessorKey: (item: Exam) => {
-        const isStaff = session.data?.user.role === "admin" || session.data?.user.role === "instructor";
+        const isStaff =
+          session.data?.user.role === "admin" ||
+          session.data?.user.role === "instructor";
         return (
           <div className="flex items-center gap-2">
             <Tooltip>
@@ -181,8 +194,17 @@ export function ExamsView({
   ];
 
   const renderCard = (item: Exam) => (
+    // biome-ignore lint/a11y/useSemanticElements: Card containing other interactive buttons
     <div
+      role="button"
+      tabIndex={0}
       onClick={() => router.push(`/exams/${item.id}`)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          router.push(`/exams/${item.id}`);
+        }
+      }}
       className="flex flex-col h-full border rounded-xl p-6 hover:border-primary/50 transition-colors bg-card text-card-foreground shadow-sm cursor-pointer"
     >
       <div className="flex justify-between items-start mb-4">
@@ -205,12 +227,19 @@ export function ExamsView({
         </div>
       </div>
 
-      <div className="mt-auto pt-4 border-t w-full flex gap-2" onClick={(e) => e.stopPropagation()}>
+      <fieldset
+        aria-label="Exam actions"
+        className="mt-auto pt-4 border-t w-full flex gap-2"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         <Button asChild variant="outline" className="flex-1">
           <Link href={`/exams/${item.id}`}>View Details</Link>
         </Button>
-        {(session.data?.user.role === "admin" || session.data?.user.role === "instructor") &&
-          item.examGroups && item.examGroups.length > 0 && (
+        {(session.data?.user.role === "admin" ||
+          session.data?.user.role === "instructor") &&
+          item.examGroups &&
+          item.examGroups.length > 0 && (
             <Button
               variant="outline"
               className="flex-1 border-amber-200 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
@@ -223,13 +252,15 @@ export function ExamsView({
           <Button asChild className="flex-1">
             <Link href={`/${item.id}/results`}>View Results</Link>
           </Button>
-        ) : isOngoing(item.startTime, item.endTime) &&
-        !item.userSessionStatus && (
-          <Button asChild className="flex-1">
-            <Link href={`/${item.id}/onboarding`}>Start Exam</Link>
-          </Button>
+        ) : (
+          isOngoing(item.startTime, item.endTime) &&
+          !item.userSessionStatus && (
+            <Button asChild className="flex-1">
+              <Link href={`/${item.id}/onboarding`}>Start Exam</Link>
+            </Button>
+          )
         )}
-      </div>
+      </fieldset>
     </div>
   );
 
@@ -263,13 +294,13 @@ export function ExamsView({
         ]}
         createAction={
           session?.data?.user.role === "instructor" ||
-            session?.data?.user.role === "admin"
+          session?.data?.user.role === "admin"
             ? {
-              label: "Create Exam",
-              onClick: () => {
-                router.push("/exams/create");
-              },
-            }
+                label: "Create Exam",
+                onClick: () => {
+                  router.push("/exams/create");
+                },
+              }
             : undefined
         }
       />
@@ -292,22 +323,20 @@ export function ExamsView({
                     <div className="bg-muted p-4 rounded-md text-sm">
                       <p className="font-semibold mb-2"> violation Log:</p>
                       <ul className="list-disc pl-4 space-y-1">
-                        {terminationDetails.events?.map(
-                          (event: any, i: number) => (
-                            <li key={i}>
-                              <span className="font-medium">
-                                {event.type === "fullscreen_exit"
-                                  ? "Exited Fullscreen"
-                                  : event.type === "tab_switch"
-                                    ? "Switched Tab"
-                                    : event.type}
-                              </span>{" "}
-                              <span className="text-muted-foreground text-xs">
-                                at {new Date(event.timestamp).toLocaleString()}
-                              </span>
-                            </li>
-                          ),
-                        )}
+                        {terminationDetails.events?.map((event) => (
+                          <li key={`${event.type}-${event.timestamp}`}>
+                            <span className="font-medium">
+                              {event.type === "fullscreen_exit"
+                                ? "Exited Fullscreen"
+                                : event.type === "tab_switch"
+                                  ? "Switched Tab"
+                                  : event.type}
+                            </span>{" "}
+                            <span className="text-muted-foreground text-xs">
+                              at {new Date(event.timestamp).toLocaleString()}
+                            </span>
+                          </li>
+                        ))}
                       </ul>
                       <p className="mt-2 font-semibold text-destructive">
                         Total Violations: {terminationDetails.violationCount}
@@ -328,7 +357,10 @@ export function ExamsView({
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={!!viewingPinsExam} onOpenChange={(open: boolean) => !open && setViewingPinsExam(null)}>
+      <Dialog
+        open={!!viewingPinsExam}
+        onOpenChange={(open: boolean) => !open && setViewingPinsExam(null)}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Batch PINs: {viewingPinsExam?.title}</DialogTitle>
@@ -337,8 +369,11 @@ export function ExamsView({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            {viewingPinsExam?.examGroups?.map((item, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+            {viewingPinsExam?.examGroups?.map((item) => (
+              <div
+                key={item.pin}
+                className="flex items-center justify-between p-3 border rounded-lg bg-muted/30"
+              >
                 <div>
                   <p className="text-sm font-medium">{item.group.name}</p>
                   <p className="font-mono text-2xl font-bold tracking-widest text-primary">
@@ -349,7 +384,9 @@ export function ExamsView({
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    navigator.clipboard.writeText(`${item.group.name} - ${item.pin}`);
+                    navigator.clipboard.writeText(
+                      `${item.group.name} - ${item.pin}`,
+                    );
                     toast.success(`PIN for ${item.group.name} copied!`);
                   }}
                 >

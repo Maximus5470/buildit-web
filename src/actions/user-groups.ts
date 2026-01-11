@@ -1,9 +1,9 @@
 "use server";
 
+import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
-import { eq, desc, and } from "drizzle-orm";
 import db from "@/db";
-import { userGroups, userGroupMembers } from "@/db/schema";
+import { userGroupMembers, userGroups } from "@/db/schema";
 import { auth } from "@/lib/auth";
 
 export type CreateUserGroupData = {
@@ -29,7 +29,9 @@ export async function createUserGroup(data: CreateUserGroupData) {
 
   // Check if user is admin or instructor
   if (session.user.role !== "admin" && session.user.role !== "instructor") {
-    return { error: "Forbidden: Only admins and instructors can create groups" };
+    return {
+      error: "Forbidden: Only admins and instructors can create groups",
+    };
   }
 
   try {
@@ -68,13 +70,16 @@ export async function updateUserGroup(data: UpdateUserGroupData) {
   }
 
   if (session.user.role !== "admin" && session.user.role !== "instructor") {
-    return { error: "Forbidden: Only admins and instructors can update groups" };
+    return {
+      error: "Forbidden: Only admins and instructors can update groups",
+    };
   }
 
   try {
-    const updateData: any = {};
+    const updateData: Partial<typeof userGroups.$inferInsert> = {};
     if (data.name !== undefined) updateData.name = data.name;
-    if (data.description !== undefined) updateData.description = data.description;
+    if (data.description !== undefined)
+      updateData.description = data.description;
 
     await db
       .update(userGroups)
@@ -98,7 +103,9 @@ export async function deleteUserGroup(groupId: string) {
   }
 
   if (session.user.role !== "admin" && session.user.role !== "instructor") {
-    return { error: "Forbidden: Only admins and instructors can delete groups" };
+    return {
+      error: "Forbidden: Only admins and instructors can delete groups",
+    };
   }
 
   try {
@@ -120,7 +127,9 @@ export async function addUserToGroup(groupId: string, userId: string) {
   }
 
   if (session.user.role !== "admin" && session.user.role !== "instructor") {
-    return { error: "Forbidden: Only admins and instructors can add users to groups" };
+    return {
+      error: "Forbidden: Only admins and instructors can add users to groups",
+    };
   }
 
   try {
@@ -146,7 +155,10 @@ export async function removeUserFromGroup(groupId: string, userId: string) {
   }
 
   if (session.user.role !== "admin" && session.user.role !== "instructor") {
-    return { error: "Forbidden: Only admins and instructors can remove users from groups" };
+    return {
+      error:
+        "Forbidden: Only admins and instructors can remove users from groups",
+    };
   }
 
   try {
@@ -155,8 +167,8 @@ export async function removeUserFromGroup(groupId: string, userId: string) {
       .where(
         and(
           eq(userGroupMembers.groupId, groupId),
-          eq(userGroupMembers.userId, userId)
-        )
+          eq(userGroupMembers.userId, userId),
+        ),
       );
 
     return { success: true };

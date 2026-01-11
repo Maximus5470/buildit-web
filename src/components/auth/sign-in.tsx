@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { enforceSingleSession } from "@/actions/auth-security";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,7 +22,6 @@ import { getDeviceFingerprint } from "@/lib/utils/fingerprint";
 import { usePinStore } from "@/stores/pin-store";
 import PinSetupDialog from "./pin-setup-dialog";
 import PinVerificationDialog from "./pin-verification-dialog";
-import { enforceSingleSession } from "@/actions/auth-security";
 
 export default function SignIn() {
   const router = useRouter();

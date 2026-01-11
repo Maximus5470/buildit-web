@@ -8,17 +8,18 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import type { Problem, TestCase } from "@/types/problem";
 import { AntiCheatGuard } from "./anti-cheat-guard";
-
 import { CodePlayground } from "./code-playground";
 import { ExamHeader } from "./exam-header";
 import { ExamSidebar } from "./exam-sidebar";
 import { ProblemViewer } from "./problem-viewer";
 
-import { Problem, TestCase } from "@/types/problem";
-
 // Minimal question type for exam sessions
-type ExamQuestion = Pick<Problem, "id" | "title" | "problemStatement" | "driverCode"> & {
+type ExamQuestion = Pick<
+  Problem,
+  "id" | "title" | "problemStatement" | "driverCode"
+> & {
   testCases: TestCase[];
 };
 

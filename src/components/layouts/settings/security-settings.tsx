@@ -1,5 +1,18 @@
 "use client";
 
+interface Session {
+  id: string;
+  userAgent: string | null;
+  ipAddress: string | null;
+  isCurrent: boolean;
+}
+
+interface Device {
+  fingerprint: string;
+  name: string;
+  createdAt: Date;
+}
+
 import { Monitor, Smartphone, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -39,7 +52,7 @@ import { authClient, useSession } from "@/lib/auth-client";
 import { getDeviceFingerprint } from "@/lib/utils/fingerprint";
 
 export default function SecuritySettings() {
-  const { data: session } = useSession();
+  useSession();
   const [fingerprint, setFingerprint] = useState<string>("");
   const [pinStatus, setPinStatus] = useState<PinStatusResult | null>(null);
   const [loadingPin, setLoadingPin] = useState(true);
@@ -56,8 +69,8 @@ export default function SecuritySettings() {
   const [settingPin, setSettingPin] = useState(false);
 
   // Sessions & Devices State
-  const [sessions, setSessions] = useState<any[]>([]);
-  const [devices, setDevices] = useState<any[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [devices, setDevices] = useState<Device[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
 
   const refreshSessionsAndDevices = async () => {

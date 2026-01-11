@@ -1,8 +1,6 @@
 "use server";
 
-import { isNull } from "drizzle-orm";
 import db from "@/db";
-import { submissions } from "@/db/schema";
 
 export type LeaderboardEntry = {
   rank: number;
@@ -51,11 +49,15 @@ export async function getLeaderboardData() {
   for (const sub of allSubmissions) {
     if (!sub.userId) continue;
 
-    if (!userBestSubmissions.has(sub.userId!)) {
-      userBestSubmissions.set(sub.userId!, new Map());
+    const uid = sub.userId;
+    if (!uid) continue;
+
+    if (!userBestSubmissions.has(uid)) {
+      userBestSubmissions.set(uid, new Map());
     }
 
-    const userProblems = userBestSubmissions.get(sub.userId!)!;
+    const userProblems = userBestSubmissions.get(uid);
+    if (!userProblems) continue;
     const existing = userProblems.get(sub.problemId);
 
     // Logic: maximize Score. If Score equal, minimize CreatedAt (earlier is better).

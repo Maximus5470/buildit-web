@@ -1,10 +1,10 @@
-import { getUserGroups } from "@/actions/user-groups";
-import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { getUserGroups } from "@/actions/user-groups";
 import UserGroupsClient from "@/components/layouts/user-groups/user-groups-client";
 import db from "@/db";
 import { user } from "@/db/schema";
+import { auth } from "@/lib/auth";
 
 export default async function UserGroupsPage() {
   const session = await auth.api.getSession({
@@ -26,10 +26,5 @@ export default async function UserGroupsPage() {
   // Fetch all users for adding to groups
   const users = await db.select().from(user);
 
-  return (
-    <UserGroupsClient 
-      groups={groups} 
-      users={users}
-    />
-  );
+  return <UserGroupsClient groups={groups} users={users} />;
 }

@@ -9,7 +9,10 @@ import {
   questionTestCases,
 } from "@/db/schema";
 
-const DATA_FILE = path.join(process.cwd(), "data/leetcode/refined_problem_data.json");
+const DATA_FILE = path.join(
+  process.cwd(),
+  "data/leetcode/refined_problem_data.json",
+);
 const COLLECTION_TITLE = "Java Practice Problems";
 
 interface RefinedProblem {
@@ -59,7 +62,9 @@ async function seed() {
   const content = fs.readFileSync(DATA_FILE, "utf-8");
   const problems: RefinedProblem[] = JSON.parse(content);
 
-  console.log(`Found ${problems.length} problems in refined_problem_data.json.`);
+  console.log(
+    `Found ${problems.length} problems in refined_problem_data.json.`,
+  );
 
   let totalQuestionsProcessed = 0;
   let totalQuestionsInserted = 0;
@@ -79,8 +84,13 @@ async function seed() {
         questionId = existingQuestion.id;
 
         // Check and update driverCode if needed
-        const currentDriverCode = existingQuestion.driverCode as any;
-        const newDriverCode = problem.driver_code ? { java: problem.driver_code } : { java: "" };
+        const currentDriverCode = existingQuestion.driverCode as Record<
+          string,
+          string
+        >;
+        const newDriverCode = problem.driver_code
+          ? { java: problem.driver_code }
+          : { java: "" };
 
         if (
           JSON.stringify(currentDriverCode) !== JSON.stringify(newDriverCode)
@@ -102,7 +112,9 @@ async function seed() {
             problemStatement: problem.description,
             difficulty: "easy",
             allowedLanguages: ["java"],
-            driverCode: problem.driver_code ? { java: problem.driver_code } : { java: "" },
+            driverCode: problem.driver_code
+              ? { java: problem.driver_code }
+              : { java: "" },
           })
           .returning();
         questionId = newQuestion.id;

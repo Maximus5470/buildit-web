@@ -17,6 +17,7 @@ export const auth = betterAuth({
       defaultRole: "student",
       roles: {
         student: {
+          // biome-ignore lint/suspicious/noExplicitAny: better-auth internal type
           authorize: () => true as any,
           statements: [],
         },

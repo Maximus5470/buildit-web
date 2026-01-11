@@ -3,7 +3,7 @@ import path from "node:path";
 import { parse } from "csv-parse/sync";
 import { eq } from "drizzle-orm";
 import db from "@/db";
-import { user, userGroups, userGroupMembers } from "@/db/schema";
+import { user, userGroupMembers, userGroups } from "@/db/schema";
 import { auth } from "@/lib/auth";
 
 const CSV_FILE = path.join(process.cwd(), "data/pat_users/users.csv");
@@ -112,8 +112,13 @@ async function seedUsers() {
             .where(eq(user.id, userId));
           created++;
         }
-      } catch (error: any) {
-        if (error?.body?.message?.includes("already exists")) {
+      } catch (error: unknown) {
+        if (
+          error &&
+          typeof error === "object" &&
+          "body" in error &&
+          (error as any).body?.message?.includes("already exists")
+        ) {
           // If user exists, fetch ID from DB and update fields
           const existingUser = await db.query.user.findFirst({
             where: eq(user.email, email),
@@ -139,18 +144,21 @@ async function seedUsers() {
       }
 
       // Add user to group if specified
-      if (userId && record.UserGroup && groupCache.has(record.UserGroup)) {
-        const groupId = groupCache.get(record.UserGroup)!;
-        const isMember = await db.query.userGroupMembers.findFirst({
-          where: (members, { and, eq }) =>
-            and(eq(members.userId, userId), eq(members.groupId, groupId)),
-        });
-
-        if (!isMember) {
-          await db.insert(userGroupMembers).values({
-            userId,
-            groupId,
+      const groupName = record.UserGroup;
+      if (userId && groupName && groupCache.has(groupName)) {
+        const groupId = groupCache.get(groupName);
+        if (groupId) {
+          const isMember = await db.query.userGroupMembers.findFirst({
+            where: (members, { and, eq }) =>
+              and(eq(members.userId, userId), eq(members.groupId, groupId)),
           });
+
+          if (!isMember) {
+            await db.insert(userGroupMembers).values({
+              userId,
+              groupId,
+            });
+          }
         }
       }
 
@@ -158,9 +166,10 @@ async function seedUsers() {
       if (processed % 10 === 0) {
         console.log(`Processed ${processed}/${records.length} users...`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       errors++;
-      console.error(`Error processing ${record.RollNo}:`, err?.message || err);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`Error processing ${record.RollNo}:`, msg);
     }
   }
 

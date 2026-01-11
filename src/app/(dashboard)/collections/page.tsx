@@ -19,5 +19,11 @@ export default async function CollectionsPage({
     perPage: 10,
   });
 
-  return <CollectionsView data={data.map(c => ({ ...c, tags: c.tags || [] }))} total={total} type={type} />;
+  return (
+    <CollectionsView
+      data={data.map((c) => ({ ...c, tags: c.tags || [] }))}
+      total={total}
+      type={type}
+    />
+  );
 }

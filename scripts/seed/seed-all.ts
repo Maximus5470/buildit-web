@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { and, eq } from "drizzle-orm";
 import { parse } from "csv-parse/sync";
+import { eq } from "drizzle-orm";
 import db from "@/db";
 import {
   collectionQuestions,
@@ -9,8 +9,8 @@ import {
   questions,
   questionTestCases,
   user,
-  userGroups,
   userGroupMembers,
+  userGroups,
 } from "@/db/schema";
 import { auth } from "@/lib/auth";
 
@@ -60,8 +60,8 @@ interface UserRecord {
 
 async function seedUsers() {
   console.log("👥 Seeding users...");
-  
-  const createdUsers: any[] = [];
+
+  const createdUsers: (typeof user.$inferSelect)[] = [];
 
   // First, create admin and instructor
   const systemUsers = [
@@ -120,8 +120,8 @@ async function seedUsers() {
       const updatedUser = await db.query.user.findFirst({
         where: eq(user.id, newUser.id),
       });
-      
-      createdUsers.push(updatedUser);
+
+      if (updatedUser) createdUsers.push(updatedUser);
       console.log(`  ✓ Created ${u.username} (${u.role})`);
     }
   }
@@ -129,7 +129,7 @@ async function seedUsers() {
   // Load and create users from CSV
   if (fs.existsSync(CSV_FILE)) {
     console.log(`  Loading users from CSV: ${path.basename(CSV_FILE)}`);
-    
+
     const content = fs.readFileSync(CSV_FILE, "utf-8");
     const records = parse(content, {
       columns: true,
@@ -215,7 +215,7 @@ async function seedUsers() {
             where: eq(user.id, newUser.id),
           });
 
-          createdUsers.push(updatedUser);
+          if (updatedUser) createdUsers.push(updatedUser);
           csvCreated++;
         }
       } catch (error) {
@@ -223,7 +223,9 @@ async function seedUsers() {
       }
     }
 
-    console.log(`  ✓ Created ${csvCreated} students from CSV (${csvSkipped} already existed)`);
+    console.log(
+      `  ✓ Created ${csvCreated} students from CSV (${csvSkipped} already existed)`,
+    );
   } else {
     console.log(`  CSV file not found at ${CSV_FILE}, skipping student import`);
   }
@@ -232,11 +234,11 @@ async function seedUsers() {
   return createdUsers;
 }
 
-async function seedGroups(users: any[]) {
+async function seedGroups(users: (typeof user.$inferSelect)[]) {
   console.log("👥 Checking additional user groups...");
 
   const students = users.filter((u) => u.role === "student");
-  
+
   if (students.length === 0) {
     console.log("  No students found, skipping additional groups\n");
     return [];
@@ -248,15 +250,13 @@ async function seedGroups(users: any[]) {
   return allGroups;
 }
 
-
-
 async function seedAll() {
   console.log("🌱 Starting comprehensive database seeding...\n");
-  console.log("=" .repeat(60) + "\n");
+  console.log(`${"=".repeat(60)}\n`);
 
   // Step 1: Seed Users
   const users = await seedUsers();
-  
+
   const adminUser = users.find((u) => u.role === "admin");
   const instructorUser = users.find((u) => u.role === "instructor");
   const createdBy = adminUser?.id || instructorUser?.id || users[0]?.id;
@@ -296,8 +296,7 @@ async function seedAll() {
       .returning();
     leetcodeCollection = newCollection;
   } else {
-    console.log(
-      `    Using existing collection: "${leetcodeCollectionTitle}"`);
+    console.log(`    Using existing collection: "${leetcodeCollectionTitle}"`);
   }
 
   const batchFiles = fs
@@ -306,10 +305,10 @@ async function seedAll() {
 
   if (batchFiles.length > 0) {
     console.log(`Found ${batchFiles.length} batch files.`);
-    
+
     for (const file of batchFiles) {
       console.log(`  Processing ${file}...`);
-      const filePath     = path.join(LEETCODE_DATA_DIR, file);
+      const filePath = path.join(LEETCODE_DATA_DIR, file);
       const content = fs.readFileSync(filePath, "utf-8");
       const problems: LeetCodeProblem[] = JSON.parse(content);
 
@@ -326,11 +325,15 @@ async function seedAll() {
             questionId = existingQuestion.id;
 
             // Check and update driverCode if needed
-            const currentDriverCode = existingQuestion.driverCode as any;
-            const newDriverCode = problem.driverCode as any;
+            const currentDriverCode = existingQuestion.driverCode as Record<
+              string,
+              string
+            >;
+            const newDriverCode = problem.driverCode as Record<string, string>;
 
             if (
-              JSON.stringify(currentDriverCode) !== JSON.stringify(newDriverCode)
+              JSON.stringify(currentDriverCode) !==
+              JSON.stringify(newDriverCode)
             ) {
               await db
                 .update(questions)
@@ -345,8 +348,14 @@ async function seedAll() {
               .values({
                 title: problem.title,
                 problemStatement: problem.description,
-                difficulty: (problem.difficulty || "medium") as any,
-                allowedLanguages: problem.allowedLanguages || ["java", "python"],
+                difficulty: (problem.difficulty || "medium") as
+                  | "easy"
+                  | "medium"
+                  | "hard",
+                allowedLanguages: problem.allowedLanguages || [
+                  "java",
+                  "python",
+                ],
                 driverCode: problem.driverCode || { java: "", python: "" },
               })
               .returning();
@@ -355,7 +364,7 @@ async function seedAll() {
 
             // Insert Test Cases
             if (problem.testCases && problem.testCases.length > 0) {
-              const testCasesToInsert = problem.testCases.map((tc: any) => ({
+              const testCasesToInsert = problem.testCases.map((tc) => ({
                 questionId: questionId,
                 input: tc.input,
                 expectedOutput: tc.expectedOutput,
@@ -382,7 +391,10 @@ async function seedAll() {
             totalLinksCreated++;
           }
         } catch (error) {
-          console.error(`        Error processing question "${problem.title}":`, error);
+          console.error(
+            `        Error processing question "${problem.title}":`,
+            error,
+          );
         }
       }
     }
@@ -412,8 +424,7 @@ async function seedAll() {
         .returning();
       refinedCollection = newCollection;
     } else {
-      console.log(
-        `    Using existing collection: "${refinedCollectionTitle}"`);
+      console.log(`    Using existing collection: "${refinedCollectionTitle}"`);
     }
 
     const content = fs.readFileSync(REFINED_DATA_FILE, "utf-8");
@@ -433,7 +444,10 @@ async function seedAll() {
         if (existingQuestion) {
           questionId = existingQuestion.id;
 
-          const currentDriverCode = existingQuestion.driverCode as any;
+          const currentDriverCode = existingQuestion.driverCode as Record<
+            string,
+            string
+          >;
           const newDriverCode = problem.driver_code
             ? { java: problem.driver_code }
             : { java: "" };
@@ -506,14 +520,14 @@ async function seedAll() {
   }
 
   // ==================== SUMMARY ====================
-  console.log("=" .repeat(60));
+  console.log("=".repeat(60));
   console.log("✅ COMPREHENSIVE SEEDING COMPLETE!");
-  console.log("=" .repeat(60));
+  console.log("=".repeat(60));
   console.log(`👥 Users: ${users.length}`);
   console.log(`📊 Questions Processed: ${totalProcessed}`);
   console.log(`✨ Questions Inserted: ${totalInserted}`);
   console.log(`🔗 Collection Links: ${totalLinksCreated}`);
-  console.log("=" .repeat(60));
+  console.log("=".repeat(60));
 
   process.exit(0);
 }

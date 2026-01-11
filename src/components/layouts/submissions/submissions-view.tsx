@@ -2,9 +2,10 @@
 
 import { format } from "date-fns";
 import { AlertCircle, Calendar, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { deleteExamAssignment } from "@/actions/exam-assignments-list";
 import { DataItemsView } from "@/components/common/data-items/data-items-root";
 import {
   AlertDialog,
@@ -19,7 +20,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePageName } from "@/hooks/use-page-name";
-import { deleteExamAssignment } from "@/actions/exam-assignments-list";
 
 interface Submission {
   id: string;
@@ -54,7 +54,9 @@ export function SubmissionsView({ data, total }: SubmissionsViewProps) {
     try {
       const result = await deleteExamAssignment(assignmentId);
       if (result.success) {
-        toast.success("Assignment deleted successfully. Student can now retake the exam.");
+        toast.success(
+          "Assignment deleted successfully. Student can now retake the exam.",
+        );
         router.refresh();
       } else {
         toast.error(result.message || "Failed to delete assignment");
@@ -96,7 +98,9 @@ export function SubmissionsView({ data, total }: SubmissionsViewProps) {
       accessorKey: (item: Submission) => (
         <div className="flex flex-col">
           <span className="font-medium">{item.userName || "Unknown"}</span>
-          <span className="text-xs text-muted-foreground">{item.userEmail || item.userId}</span>
+          <span className="text-xs text-muted-foreground">
+            {item.userEmail || item.userId}
+          </span>
         </div>
       ),
     },
@@ -120,7 +124,8 @@ export function SubmissionsView({ data, total }: SubmissionsViewProps) {
             <div className="group relative">
               <AlertCircle className="h-4 w-4 text-red-500 cursor-help" />
               <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-48 p-2 text-xs bg-popover text-popover-foreground border rounded-md shadow-md">
-                Terminated due to malpractice ({item.malpracticeCount || 0} violations)
+                Terminated due to malpractice ({item.malpracticeCount || 0}{" "}
+                violations)
               </div>
             </div>
           )}
@@ -137,7 +142,9 @@ export function SubmissionsView({ data, total }: SubmissionsViewProps) {
     {
       header: "Questions",
       accessorKey: (item: Submission) => (
-        <span className="text-muted-foreground">{getQuestionCount(item.assignedQuestionIds)}</span>
+        <span className="text-muted-foreground">
+          {getQuestionCount(item.assignedQuestionIds)}
+        </span>
       ),
       className: "text-center",
     },
@@ -147,11 +154,11 @@ export function SubmissionsView({ data, total }: SubmissionsViewProps) {
         <div className="flex items-center gap-2 text-muted-foreground">
           <Calendar className="h-4 w-4" />
           <span>
-            {item.completedAt 
+            {item.completedAt
               ? format(new Date(item.completedAt), "MMM d, yyyy HH:mm")
               : item.startedAt
-              ? format(new Date(item.startedAt), "MMM d, yyyy HH:mm")
-              : "N/A"}
+                ? format(new Date(item.startedAt), "MMM d, yyyy HH:mm")
+                : "N/A"}
           </span>
         </div>
       ),
@@ -208,9 +215,10 @@ export function SubmissionsView({ data, total }: SubmissionsViewProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Reset Exam Assignment</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to reset this exam assignment? This will allow
-              the student to retake the exam. All their previous submissions and
-              progress will be permanently deleted. This action cannot be undone.
+              Are you sure you want to reset this exam assignment? This will
+              allow the student to retake the exam. All their previous
+              submissions and progress will be permanently deleted. This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

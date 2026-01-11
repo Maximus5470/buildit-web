@@ -6,47 +6,18 @@ import {
   BookOpen,
   Calendar,
   Plus,
-  Trash2,
   Search,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { usePageName } from "@/hooks/use-page-name";
+import { toast } from "sonner";
 import {
   addQuestionToCollection,
-  removeQuestionFromCollection,
   getAllQuestions,
+  removeQuestionFromCollection,
 } from "@/actions/question-collections-list";
-import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,6 +29,25 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
   Pagination,
   PaginationContent,
@@ -67,6 +57,16 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { usePageName } from "@/hooks/use-page-name";
 
 interface Question {
   id: string;
@@ -129,7 +129,10 @@ export function CollectionDetailsView({
 
   const handleRemoveQuestion = async (questionId: string) => {
     startTransition(async () => {
-      const result = await removeQuestionFromCollection(collection.id, questionId);
+      const result = await removeQuestionFromCollection(
+        collection.id,
+        questionId,
+      );
       if (result.success) {
         toast.success("Question removed from collection");
         router.refresh();
@@ -145,7 +148,9 @@ export function CollectionDetailsView({
       if (result.success) {
         toast.success("Question added to collection");
         // Remove the added question from available questions
-        setAvailableQuestions(prev => prev.filter(q => q.id !== questionId));
+        setAvailableQuestions((prev) =>
+          prev.filter((q) => q.id !== questionId),
+        );
         // Refresh the page data
         router.refresh();
       } else {
@@ -160,12 +165,14 @@ export function CollectionDetailsView({
       const allQuestions = await getAllQuestions(searchQuery);
       // Filter out questions already in the collection
       const questionIds = new Set(questions.map((q) => q.id));
-      const filtered = allQuestions.filter((q) => !questionIds.has(q.id)).map((q) => ({
-        ...q,
-        allowedLanguages: (q.allowedLanguages as string[]) || [],
-      }));
+      const filtered = allQuestions
+        .filter((q) => !questionIds.has(q.id))
+        .map((q) => ({
+          ...q,
+          allowedLanguages: (q.allowedLanguages as string[]) || [],
+        }));
       setAvailableQuestions(filtered);
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to load questions");
     } finally {
       setIsLoadingQuestions(false);
@@ -205,7 +212,7 @@ export function CollectionDetailsView({
                 Search and select questions to add to this collection
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-4">
               {/* Search Input */}
               <div className="relative">
@@ -230,16 +237,22 @@ export function CollectionDetailsView({
                     {isLoadingQuestions ? (
                       <div className="flex flex-col items-center justify-center py-12">
                         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                        <p className="mt-4 text-sm text-muted-foreground">Loading questions...</p>
+                        <p className="mt-4 text-sm text-muted-foreground">
+                          Loading questions...
+                        </p>
                       </div>
                     ) : availableQuestions.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-12">
                         <div className="rounded-full bg-muted p-3 mb-4">
                           <Search className="h-6 w-6 text-muted-foreground" />
                         </div>
-                        <p className="text-sm font-medium">No questions found</p>
+                        <p className="text-sm font-medium">
+                          No questions found
+                        </p>
                         <p className="text-sm text-muted-foreground mt-1">
-                          {searchQuery ? "Try a different search term" : "Click search to load questions"}
+                          {searchQuery
+                            ? "Try a different search term"
+                            : "Click search to load questions"}
                         </p>
                       </div>
                     ) : (
@@ -260,13 +273,22 @@ export function CollectionDetailsView({
                                 >
                                   {question.difficulty}
                                 </Badge>
-                                {question.allowedLanguages.slice(0, 3).map((lang, i) => (
-                                  <Badge key={i} variant="secondary" className="text-xs">
-                                    {lang}
-                                  </Badge>
-                                ))}
+                                {question.allowedLanguages
+                                  .slice(0, 3)
+                                  .map((lang) => (
+                                    <Badge
+                                      key={lang}
+                                      variant="secondary"
+                                      className="text-xs"
+                                    >
+                                      {lang}
+                                    </Badge>
+                                  ))}
                                 {question.allowedLanguages.length > 3 && (
-                                  <Badge variant="secondary" className="text-xs">
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
                                     +{question.allowedLanguages.length - 3} more
                                   </Badge>
                                 )}
@@ -291,7 +313,10 @@ export function CollectionDetailsView({
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsAddDialogOpen(false)}
+              >
                 Close
               </Button>
             </DialogFooter>
@@ -309,8 +334,8 @@ export function CollectionDetailsView({
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
             {collection.tags && collection.tags.length > 0 ? (
-              collection.tags.map((tag, i) => (
-                <Badge key={i} variant="secondary">
+              collection.tags.map((tag) => (
+                <Badge key={tag} variant="secondary">
                   {tag}
                 </Badge>
               ))
@@ -320,7 +345,9 @@ export function CollectionDetailsView({
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Calendar className="h-4 w-4" />
-            <span>Created on {format(collection.createdAt, "MMMM d, yyyy")}</span>
+            <span>
+              Created on {format(collection.createdAt, "MMMM d, yyyy")}
+            </span>
           </div>
           <div className="text-sm text-muted-foreground">
             <span className="font-semibold">{total}</span> question
@@ -368,8 +395,12 @@ export function CollectionDetailsView({
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1 flex-wrap">
-                          {question.allowedLanguages.slice(0, 3).map((lang, i) => (
-                            <Badge key={i} variant="secondary" className="text-xs">
+                          {question.allowedLanguages.slice(0, 3).map((lang) => (
+                            <Badge
+                              key={lang}
+                              variant="secondary"
+                              className="text-xs"
+                            >
                               {lang}
                             </Badge>
                           ))}
@@ -397,14 +428,17 @@ export function CollectionDetailsView({
                                 Remove Question
                               </AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure you want to remove "{question.title}"
-                                from this collection? This action cannot be undone.
+                                Are you sure you want to remove "
+                                {question.title}" from this collection? This
+                                action cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
                               <AlertDialogAction
-                                onClick={() => handleRemoveQuestion(question.id)}
+                                onClick={() =>
+                                  handleRemoveQuestion(question.id)
+                                }
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >
                                 Remove
@@ -423,7 +457,9 @@ export function CollectionDetailsView({
                     <PaginationContent>
                       <PaginationItem>
                         <PaginationPrevious
-                          onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                          onClick={() =>
+                            handlePageChange(Math.max(1, currentPage - 1))
+                          }
                           className={
                             currentPage === 1
                               ? "pointer-events-none opacity-50"
@@ -465,7 +501,9 @@ export function CollectionDetailsView({
                       <PaginationItem>
                         <PaginationNext
                           onClick={() =>
-                            handlePageChange(Math.min(totalPages, currentPage + 1))
+                            handlePageChange(
+                              Math.min(totalPages, currentPage + 1),
+                            )
                           }
                           className={
                             currentPage === totalPages

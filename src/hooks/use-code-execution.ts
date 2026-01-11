@@ -28,8 +28,9 @@ export function useCodeExecution() {
       }
       setResult(response);
       return response;
-    } catch (err: any) {
-      const errorMessage = err.message || "An unexpected error occurred";
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "An unexpected error occurred";
       setError(errorMessage);
       throw err;
     } finally {
@@ -48,8 +49,9 @@ export function useCodeExecution() {
       }
       setResult(response);
       return response;
-    } catch (err: any) {
-      const errorMessage = err.message || "An unexpected error occurred";
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "An unexpected error occurred";
       setError(errorMessage);
       throw err;
     } finally {

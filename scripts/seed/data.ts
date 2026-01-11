@@ -10,17 +10,17 @@ import {
 } from "@/db/schema";
 
 // Types derived from schema or usage
-type ExamConfig =
-  | { strategy: "fixed"; problemIds: string[] }
-  | { strategy: "random_pool"; collectionId: string; count: number };
 
 // Sample problems data
 const seedProblems = [
   {
     title: "Two Sum",
-    description: "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
+    description:
+      "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
     difficulty: "easy" as const,
-    driverCode: { java: "class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // Your code here\n    }\n}" },
+    driverCode: {
+      java: "class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // Your code here\n    }\n}",
+    },
     testCases: [
       { input: "[2,7,11,15]\n9", expectedOutput: "[0,1]", isHidden: false },
       { input: "[3,2,4]\n6", expectedOutput: "[1,2]", isHidden: true },
@@ -28,9 +28,12 @@ const seedProblems = [
   },
   {
     title: "Reverse Linked List",
-    description: "Given the head of a singly linked list, reverse the list, and return the reversed list.",
+    description:
+      "Given the head of a singly linked list, reverse the list, and return the reversed list.",
     difficulty: "easy" as const,
-    driverCode: { java: "class Solution {\n    public ListNode reverseList(ListNode head) {\n        // Your code here\n    }\n}" },
+    driverCode: {
+      java: "class Solution {\n    public ListNode reverseList(ListNode head) {\n        // Your code here\n    }\n}",
+    },
     testCases: [
       { input: "[1,2,3,4,5]", expectedOutput: "[5,4,3,2,1]", isHidden: false },
       { input: "[1,2]", expectedOutput: "[2,1]", isHidden: true },
@@ -38,9 +41,12 @@ const seedProblems = [
   },
   {
     title: "Valid Parentheses",
-    description: "Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.",
+    description:
+      "Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.",
     difficulty: "medium" as const,
-    driverCode: { java: "class Solution {\n    public boolean isValid(String s) {\n        // Your code here\n    }\n}" },
+    driverCode: {
+      java: "class Solution {\n    public boolean isValid(String s) {\n        // Your code here\n    }\n}",
+    },
     testCases: [
       { input: "()", expectedOutput: "true", isHidden: false },
       { input: "()[]{}", expectedOutput: "true", isHidden: false },
@@ -49,9 +55,12 @@ const seedProblems = [
   },
   {
     title: "Binary Search",
-    description: "Given an array of integers nums which is sorted in ascending order, and an integer target, write a function to search target in nums.",
+    description:
+      "Given an array of integers nums which is sorted in ascending order, and an integer target, write a function to search target in nums.",
     difficulty: "easy" as const,
-    driverCode: { java: "class Solution {\n    public int search(int[] nums, int target) {\n        // Your code here\n    }\n}" },
+    driverCode: {
+      java: "class Solution {\n    public int search(int[] nums, int target) {\n        // Your code here\n    }\n}",
+    },
     testCases: [
       { input: "[-1,0,3,5,9,12]\n9", expectedOutput: "4", isHidden: false },
       { input: "[-1,0,3,5,9,12]\n2", expectedOutput: "-1", isHidden: true },
@@ -59,11 +68,18 @@ const seedProblems = [
   },
   {
     title: "Merge Two Sorted Lists",
-    description: "You are given the heads of two sorted linked lists list1 and list2. Merge the two lists into one sorted list.",
+    description:
+      "You are given the heads of two sorted linked lists list1 and list2. Merge the two lists into one sorted list.",
     difficulty: "medium" as const,
-    driverCode: { java: "class Solution {\n    public ListNode mergeTwoLists(ListNode list1, ListNode list2) {\n        // Your code here\n    }\n}" },
+    driverCode: {
+      java: "class Solution {\n    public ListNode mergeTwoLists(ListNode list1, ListNode list2) {\n        // Your code here\n    }\n}",
+    },
     testCases: [
-      { input: "[1,2,4]\n[1,3,4]", expectedOutput: "[1,1,2,3,4,4]", isHidden: false },
+      {
+        input: "[1,2,4]\n[1,3,4]",
+        expectedOutput: "[1,1,2,3,4,4]",
+        isHidden: false,
+      },
       { input: "[]\n[]", expectedOutput: "[]", isHidden: true },
     ],
   },
@@ -174,7 +190,9 @@ async function seedData() {
       questionIndex++;
     }
 
-    console.log(`✅ Created ${allQuestionIds.length} questions with testcases.`);
+    console.log(
+      `✅ Created ${allQuestionIds.length} questions with testcases.`,
+    );
 
     // 5. Create Exams
     console.log("📝 Creating exams...");
@@ -267,7 +285,7 @@ async function seedData() {
         startTime: new Date(now.getTime() + s.startOffset),
         endTime: new Date(now.getTime() + s.endOffset),
         durationMinutes: s.duration,
-        config: s.config as any, // Cast to any if type mismatch occurs with jsonb, but usually fine
+        config: s.config as import("@/types/exam-config").ExamConfig, // Cast to proper type used in prompt mapping
         createdBy: creator.id,
       });
     }

@@ -1,8 +1,26 @@
 "use server";
 
-import { and, asc, desc, eq, gt, gte, ilike, inArray, lt, lte, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  gte,
+  ilike,
+  inArray,
+  lt,
+  lte,
+  type SQL,
+  sql,
+} from "drizzle-orm";
 import db from "@/db";
-import { examAssignments, exams, examGroups, userGroupMembers } from "@/db/schema";
+import {
+  examAssignments,
+  examGroups,
+  exams,
+  userGroupMembers,
+} from "@/db/schema";
 import type { GetExamsParams } from "@/types/exam";
 
 export async function getExams({
@@ -51,7 +69,7 @@ export async function getExams({
     END
   `;
 
-  let orderBy: any[] = [asc(statusOrder), desc(exams.createdAt)]; // Default sort
+  let orderBy: SQL[] = [asc(statusOrder), desc(exams.createdAt)]; // Default sort
 
   if (sort === "title-asc") orderBy = [asc(exams.title)];
   if (sort === "title-desc") orderBy = [desc(exams.title)];
@@ -59,7 +77,7 @@ export async function getExams({
   if (sort === "date-desc") orderBy = [desc(exams.startTime)];
 
   // If userId is provided, filter exams to only those assigned to user's groups
-  let data;
+  let data: (typeof exams.$inferSelect)[] = [];
   let total = 0;
 
   if (userId) {
@@ -92,14 +110,16 @@ export async function getExams({
     }
 
     // Filter relevant exams based on their batch schedules
-    const relevantExams = examGroupsData.filter(eg => {
+    const relevantExams = examGroupsData.filter((eg) => {
       // If batch schedule is provided, check it
       if (eg.startTime && currentTimestamp < eg.startTime) return false;
       if (eg.endTime && currentTimestamp > eg.endTime) return false;
       return true;
     });
 
-    const allowedExamIds = Array.from(new Set(relevantExams.map(eg => eg.examId)));
+    const allowedExamIds = Array.from(
+      new Set(relevantExams.map((eg) => eg.examId)),
+    );
 
     if (allowedExamIds.length === 0) {
       return { data: [], total: 0 };
@@ -127,10 +147,12 @@ export async function getExams({
 
     total = countResult[0]?.count ?? 0;
 
-    // For students, override the global startTime/endTime in the returned data 
+    // For students, override the global startTime/endTime in the returned data
     // with their batch-specific schedule if available.
-    data = data.map(exam => {
-      const batchSchedule = examGroupsData.find(eg => eg.examId === exam.id && userGroupIds.includes(eg.groupId));
+    data = data.map((exam) => {
+      const batchSchedule = examGroupsData.find(
+        (eg) => eg.examId === exam.id && userGroupIds.includes(eg.groupId),
+      );
       return {
         ...exam,
         startTime: batchSchedule?.startTime || exam.startTime,

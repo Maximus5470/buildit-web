@@ -1,9 +1,8 @@
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getExam } from "@/actions/exam-details";
 import { ExamDetailsView } from "@/components/layouts/exams/exam-details-view";
-
 import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 
 export default async function ExamDetailsPage({
   params,
@@ -14,7 +13,7 @@ export default async function ExamDetailsPage({
   const session = await auth.api.getSession({
     headers: await headers(),
   });
-  const exam = await getExam(examId, session?.user?.id) as any;
+  const exam = (await getExam(examId, session?.user?.id)) as any;
 
   if (!exam) {
     notFound();

@@ -3,7 +3,11 @@ import { recordMalpractice } from "@/lib/exam/malpractice-actions";
 
 export type ViolationType = "fullscreen" | "tab" | "blur" | "devtools";
 
-export type ViolationState = "IDLE" | "VIOLATION_ACTIVE" | "RESOLVED" | "TERMINATED";
+export type ViolationState =
+  | "IDLE"
+  | "VIOLATION_ACTIVE"
+  | "RESOLVED"
+  | "TERMINATED";
 
 export interface ViolationRecord {
   violationType: ViolationType;
@@ -73,7 +77,8 @@ export const useViolationStore = create<ViolationStoreState>((set, get) => ({
   },
 
   triggerViolation: (type) => {
-    const { examActive, state, onTerminate, assignmentId, isProcessing } = get();
+    const { examActive, state, onTerminate, assignmentId, isProcessing } =
+      get();
 
     if (!examActive) return;
     if (state === "TERMINATED") return;
@@ -82,7 +87,9 @@ export const useViolationStore = create<ViolationStoreState>((set, get) => ({
 
     set({ isProcessing: true });
 
-    const existingViolations = get().violations.filter(v => v.violationType === type);
+    const existingViolations = get().violations.filter(
+      (v) => v.violationType === type,
+    );
     const count = existingViolations.length + 1;
 
     const newViolation: ViolationRecord = {
@@ -181,7 +188,7 @@ export const useViolationStore = create<ViolationStoreState>((set, get) => ({
   },
 
   getViolationCount: (type) => {
-    return get().violations.filter(v => v.violationType === type).length;
+    return get().violations.filter((v) => v.violationType === type).length;
   },
 
   getTotalViolations: () => {

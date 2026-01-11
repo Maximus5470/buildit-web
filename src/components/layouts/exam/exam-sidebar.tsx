@@ -13,7 +13,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { Problem } from "@/types/problem";
+import type { Problem } from "@/types/problem";
 
 interface ExamSidebarProps {
   examTitle: string;

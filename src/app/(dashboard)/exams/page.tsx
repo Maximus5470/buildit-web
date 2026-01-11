@@ -25,7 +25,7 @@ export default async function ExamsPage({
   const userRole = session?.user?.role;
 
   // TODO: Fetch termination details from examAssignments if needed
-  const terminationDetails = null;
+  const terminationDetails = undefined;
 
   const { data, total } = await getExams({
     page,
@@ -34,7 +34,8 @@ export default async function ExamsPage({
     sort: sort || undefined, // getExams handles default sort logic, but we can pass it explicitly
     perPage: 10,
     // Only filter by userId for students; admins and instructors see all exams
-    userId: (userRole === "admin" || userRole === "instructor") ? undefined : userId,
+    userId:
+      userRole === "admin" || userRole === "instructor" ? undefined : userId,
   });
 
   return (

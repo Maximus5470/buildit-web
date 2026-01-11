@@ -7,6 +7,7 @@ export const authClient = createAuthClient({
     adminClient({
       roles: {
         student: {
+          // biome-ignore lint/suspicious/noExplicitAny: better-auth internal type
           authorize: () => true as any,
           statements: [],
         },
