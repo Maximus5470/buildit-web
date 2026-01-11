@@ -17,7 +17,7 @@ function AuthContent() {
   }, [session, isPending, router]);
 
   if (isPending || session) {
-    return null; // Or a loading spinner if preferred, but null prevents a flash
+    return null;
   }
 
   return <AuthForm />;
