@@ -92,6 +92,19 @@ export default function EditUserDialog({
 
     setLoading(true);
     try {
+      const { updateUser } = await import("@/actions/user-management");
+
+      const result = await updateUser({
+        id: user.id,
+        name: formData.name,
+        role: formData.role,
+        banned: formData.banned,
+      });
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to update user");
+      }
+
       const updatedUser: User = {
         ...user,
         name: formData.name,
@@ -104,11 +117,8 @@ export default function EditUserDialog({
         banned: formData.banned,
       };
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
       onUserUpdated(updatedUser);
-      toast.success("User updated successfully");
+      toast.success(formData.banned ? "User has been banned" : "User updated successfully");
       onOpenChange(false);
     } catch (error) {
       toast.error(
