@@ -46,7 +46,10 @@ export async function createUser(data: CreateUserData) {
   }
 
   // Only admins and instructors can create users
-  if (currentSession.user.role !== "admin" && currentSession.user.role !== "instructor") {
+  if (
+    currentSession.user.role !== "admin" &&
+    currentSession.user.role !== "instructor"
+  ) {
     return { error: "Forbidden" };
   }
 
@@ -126,7 +129,10 @@ export async function updateUser(data: UpdateUserData) {
     return { error: "Unauthorized" };
   }
 
-  if (currentSession.user.role !== "admin" && currentSession.user.role !== "instructor") {
+  if (
+    currentSession.user.role !== "admin" &&
+    currentSession.user.role !== "instructor"
+  ) {
     return { error: "Forbidden" };
   }
 
@@ -162,7 +168,9 @@ export async function updateUser(data: UpdateUserData) {
     // If user is being banned, revoke all their active sessions to force logout
     if (data.banned === true) {
       await db.delete(session).where(eq(session.userId, data.id));
-      console.log(`[User Management] Revoked all sessions for banned user: ${data.id}`);
+      console.log(
+        `[User Management] Revoked all sessions for banned user: ${data.id}`,
+      );
     }
 
     const updatedUser = await db.query.user.findFirst({
@@ -190,7 +198,10 @@ export async function deleteUser(userId: string) {
     return { error: "Unauthorized" };
   }
 
-  if (currentSession.user.role !== "admin" && currentSession.user.role !== "instructor") {
+  if (
+    currentSession.user.role !== "admin" &&
+    currentSession.user.role !== "instructor"
+  ) {
     return { error: "Forbidden" };
   }
 
@@ -231,7 +242,8 @@ export async function revokeUserSessions(userId: string) {
   } catch (error) {
     console.error("Error revoking sessions:", error);
     return {
-      error: error instanceof Error ? error.message : "Failed to revoke sessions",
+      error:
+        error instanceof Error ? error.message : "Failed to revoke sessions",
     };
   }
 }

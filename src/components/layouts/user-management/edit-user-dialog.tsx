@@ -118,7 +118,9 @@ export default function EditUserDialog({
       };
 
       onUserUpdated(updatedUser);
-      toast.success(formData.banned ? "User has been banned" : "User updated successfully");
+      toast.success(
+        formData.banned ? "User has been banned" : "User updated successfully",
+      );
       onOpenChange(false);
     } catch (error) {
       toast.error(
