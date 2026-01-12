@@ -33,6 +33,7 @@ export const user = pgTable("user", {
   section: text("section"),
   branch: text("branch"),
   regulation: text("regulation"),
+  gender: text("gender").default("male"),
 });
 
 export const session = pgTable(

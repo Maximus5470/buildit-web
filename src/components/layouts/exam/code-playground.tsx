@@ -3,10 +3,10 @@
 import { java } from "@codemirror/lang-java";
 import { python } from "@codemirror/lang-python";
 import { foldEffect } from "@codemirror/language";
+import { githubLight } from "@uiw/codemirror-theme-github";
+import { vscodeDark } from "@uiw/codemirror-theme-vscode";
 // import { type EditorView } from "@codemirror/view"; // Removing this as we fallback to any for now
 import CodeMirror from "@uiw/react-codemirror";
-import { vscodeDark } from "@uiw/codemirror-theme-vscode";
-import { githubLight } from "@uiw/codemirror-theme-github";
 import { ChevronDown, Loader2, Play, Send } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";

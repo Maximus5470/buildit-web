@@ -25,14 +25,14 @@ export default async function UsersPage() {
     <UserManagementClient
       users={users.map((u) => ({
         id: u.id,
-        rollNo: u.username || u.id.slice(0, 10).toUpperCase(),
+        rollNo: u.rollNumber || "",
         name: u.name,
         email: u.email,
-        gender: "male" as const, // Placeholder - will be in DB later
-        branch: "CSE", // Placeholder - will be in DB later
-        semester: "5", // Placeholder - will be in DB later
-        section: "A", // Placeholder - will be in DB later
-        regulation: "R23", // Placeholder - will be in DB later
+        gender: (u.gender as "male" | "female" | "other") || "male",
+        branch: u.branch || "",
+        semester: u.semester || "",
+        section: u.section || "",
+        regulation: u.regulation || "",
         role: u.role as "student" | "instructor" | "admin",
         createdAt: u.createdAt,
         banned: u.banned,

@@ -1,9 +1,12 @@
 "use client";
 
+import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { createUser } from "@/actions/user-management";
 import { Button } from "@/components/ui/button";
+
 import {
   Dialog,
   DialogContent,
@@ -14,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
 import {
   Select,
   SelectContent,
@@ -69,7 +73,18 @@ export default function AddUserDialog({
     section: "A",
     regulation: "R23",
     role: "student" as "student" | "instructor" | "admin",
+    dateOfBirth: undefined as Date | undefined,
   });
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (!value) {
+      setFormData((prev) => ({ ...prev, dateOfBirth: undefined }));
+      return;
+    }
+    const date = new Date(value);
+    setFormData((prev) => ({ ...prev, dateOfBirth: date }));
+  };
 
   const generateEmail = (rollNo: string) => {
     return `${rollNo.toLowerCase()}@iare.ac.in`;
@@ -127,11 +142,8 @@ export default function AddUserDialog({
 
     setLoading(true);
     try {
-      const newUser: User = {
-        id: crypto.randomUUID(),
-        rollNo: isStudent
-          ? formData.rollNo.toUpperCase()
-          : formData.name.split(" ")[0].toUpperCase(),
+      const result = await createUser({
+        rollNo: isStudent ? formData.rollNo.toUpperCase() : undefined,
         name: formData.name,
         email: getEmail(),
         gender: formData.gender,
@@ -140,13 +152,18 @@ export default function AddUserDialog({
         section: isStudent ? formData.section : "N/A",
         regulation: isStudent ? formData.regulation : "N/A",
         role: formData.role,
-        createdAt: new Date(),
-        banned: false,
-      };
+        dateOfBirth: formData.dateOfBirth,
+      });
+
+      if (result.error || !result.user) {
+        throw new Error(result.error || "Failed to create user");
+      }
+
+      const newUser = result.user;
 
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      onUserAdded(newUser);
+      onUserAdded(newUser as User);
       toast.success(`User "${formData.name}" created with default password`);
       onOpenChange(false);
 
@@ -161,6 +178,7 @@ export default function AddUserDialog({
         section: "A",
         regulation: "R23",
         role: "student",
+        dateOfBirth: undefined,
       });
       setErrors({});
       setTouched({});
@@ -375,6 +393,22 @@ export default function AddUserDialog({
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="space-y-2">
+                <Label>Date of Birth</Label>
+                <div className="relative">
+                  <Input
+                    type="date"
+                    value={
+                      formData.dateOfBirth
+                        ? format(formData.dateOfBirth, "yyyy-MM-dd")
+                        : ""
+                    }
+                    onChange={handleDateChange}
+                    max={new Date().toISOString().split("T")[0]}
+                  />
+                </div>
+              </div>
             </>
           ) : (
             <>
@@ -442,6 +476,22 @@ export default function AddUserDialog({
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Date of Birth</Label>
+                <div className="relative">
+                  <Input
+                    type="date"
+                    value={
+                      formData.dateOfBirth
+                        ? format(formData.dateOfBirth, "yyyy-MM-dd")
+                        : ""
+                    }
+                    onChange={handleDateChange}
+                    max={new Date().toISOString().split("T")[0]}
+                  />
+                </div>
               </div>
             </>
           )}

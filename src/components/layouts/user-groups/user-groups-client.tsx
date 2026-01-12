@@ -1,17 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Edit2,
-  Plus,
-  Search,
-  Trash2,
-  UserMinus,
-  UserPlus,
-  Users,
-} from "lucide-react";
+import { Edit2, Plus, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -61,8 +53,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import ManageMembersDialog from "./manage-members-dialog";
 
 interface User {
   id: string;
@@ -114,7 +106,6 @@ export default function UserGroupsClient({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [memberSearchQuery, setMemberSearchQuery] = useState("");
 
   const createForm = useForm<GroupFormValues>({
     resolver: zodResolver(groupFormSchema),
@@ -289,7 +280,6 @@ export default function UserGroupsClient({
   function openMembersDialog(group: Group) {
     setSelectedGroup(group);
     setIsMembersDialogOpen(true);
-    setMemberSearchQuery("");
   }
 
   // Effect to sync state when props change (router.refresh results)
@@ -304,25 +294,7 @@ export default function UserGroupsClient({
     }
   }, [initialGroups, selectedGroup]);
 
-  const enrolledUserIds = useMemo(() => {
-    if (!selectedGroup) return new Set<string>();
-    return new Set(selectedGroup.members.map((m) => m.userId));
-  }, [selectedGroup]);
-
-  const filteredUsers = useMemo(() => {
-    const query = memberSearchQuery.toLowerCase();
-    return users.filter(
-      (user) =>
-        user.name?.toLowerCase().includes(query) ||
-        user.email.toLowerCase().includes(query) ||
-        user.rollNumber?.toLowerCase().includes(query),
-    );
-  }, [users, memberSearchQuery]);
-
-  const membersList = useMemo(() => {
-    if (!selectedGroup) return [];
-    return users.filter((u) => enrolledUserIds.has(u.id));
-  }, [users, enrolledUserIds, selectedGroup]);
+  // Removed filters as they are now handled in the dialog component
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">
@@ -575,175 +547,14 @@ export default function UserGroupsClient({
       </Dialog>
 
       {/* Members Dialog */}
-      <Dialog open={isMembersDialogOpen} onOpenChange={setIsMembersDialogOpen}>
-        <DialogContent className="max-w-2xl h-[80vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Manage Group Members</DialogTitle>
-            <DialogDescription>
-              Add or remove users from{" "}
-              <span className="font-semibold text-primary">
-                {selectedGroup?.name}
-              </span>
-            </DialogDescription>
-          </DialogHeader>
-
-          <Tabs defaultValue="all" className="flex-1 flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <TabsList>
-                  <TabsTrigger value="all">All Users</TabsTrigger>
-                  <TabsTrigger value="members">
-                    Current Members ({enrolledUserIds.size})
-                  </TabsTrigger>
-                </TabsList>
-              </div>
-            </div>
-
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search users by name, email, or roll no..."
-                value={memberSearchQuery}
-                onChange={(e) => setMemberSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-
-            <TabsContent value="all" className="flex-1 mt-0">
-              <ScrollArea className="h-[400px] border rounded-md p-4 bg-muted/20">
-                <div className="space-y-2">
-                  {filteredUsers.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No users found.
-                    </div>
-                  ) : (
-                    filteredUsers.map((user) => {
-                      const isMember = enrolledUserIds.has(user.id);
-                      return (
-                        <div
-                          key={user.id}
-                          className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${isMember ? "bg-primary/5 border-primary/20" : "bg-background hover:bg-accent/50"}`}
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-medium">
-                                {user.name || "Unnamed User"}
-                              </p>
-                              {isMember && (
-                                <Badge
-                                  variant="secondary"
-                                  className="text-[10px] py-0 h-5"
-                                >
-                                  Member
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground truncate max-w-[300px]">
-                              {user.email}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {user.rollNumber || "No Roll"} •{" "}
-                              {user.branch || "No Branch"} • Sem{" "}
-                              {user.semester || "-"}
-                            </p>
-                          </div>
-                          <div className="pl-4">
-                            {isMember ? (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20 h-8"
-                                onClick={() => handleRemoveMember(user.id)}
-                              >
-                                <UserMinus className="h-4 w-4 mr-2" />
-                                Remove
-                              </Button>
-                            ) : (
-                              <Button
-                                size="sm"
-                                variant="default"
-                                className="h-8"
-                                onClick={() => handleAddMember(user.id)}
-                              >
-                                <UserPlus className="h-4 w-4 mr-2" />
-                                Add
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="members" className="flex-1 mt-0">
-              <ScrollArea className="h-[400px] border rounded-md p-4 bg-muted/20">
-                <div className="space-y-2">
-                  {membersList.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No members in this group yet.
-                    </div>
-                  ) : (
-                    membersList
-                      .filter((user) =>
-                        memberSearchQuery
-                          ? user.name
-                              ?.toLowerCase()
-                              .includes(memberSearchQuery.toLowerCase()) ||
-                            user.email
-                              .toLowerCase()
-                              .includes(memberSearchQuery.toLowerCase()) ||
-                            user.rollNumber
-                              ?.toLowerCase()
-                              .includes(memberSearchQuery.toLowerCase())
-                          : true,
-                      )
-                      .map((user) => (
-                        <div
-                          key={user.id}
-                          className="flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-accent/50"
-                        >
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">
-                              {user.name || "Unnamed User"}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {user.email}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {user.rollNumber || "No Roll"} •{" "}
-                              {user.branch || "No Branch"} • Sem{" "}
-                              {user.semester || "-"}
-                            </p>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => handleRemoveMember(user.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))
-                  )}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-          </Tabs>
-
-          <DialogFooter className="mt-4">
-            <Button
-              onClick={() => setIsMembersDialogOpen(false)}
-              className="w-full sm:w-auto"
-            >
-              Done
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ManageMembersDialog
+        open={isMembersDialogOpen}
+        onOpenChange={setIsMembersDialogOpen}
+        group={selectedGroup}
+        users={users}
+        onAddMember={handleAddMember}
+        onRemoveMember={handleRemoveMember}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog

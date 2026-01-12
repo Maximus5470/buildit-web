@@ -1,6 +1,13 @@
-Sno,RollNo,Branch,FullName,Section,Gender,D.O.B,Regulation,UserGroup
-1,23951A0501,CSE,John Doe,A,M,01-01-2005,R23,CSE-A
-2,23951A0502,CSE,Jane Smith,A,F,15-03-2005,R23,CSE-A
-3,23951A0503,CSE,Robert Brown,A,M,22-07-2005,R23,CSE-A
-4,23951A0601,ECE,Mike Johnson,B,M,20-06-2005,R23,ECE-B
-5,23951A0602,ECE,Emily Davis,B,F,10-09-2005,R23,ECE-B
+Sno,RollNo,Branch,FullName,Section,Gender,D.O.B,Regulation,UserGroup,Role
+1,23951A0501,CSE,John Doe,A,M,01-01-2005,R23,CSE-A,student
+2,23951A0502,CSE,Jane Smith,A,F,15-03-2005,R23,CSE-A,student
+3,23951A0503,CSE,Robert Brown,A,M,22-07-2005,R23,CSE-A,student
+4,23951A0601,ECE,Mike Johnson,B,M,20-06-2005,R23,ECE-B,student
+5,23951A0602,ECE,Emily Davis,B,F,10-09-2005,R23,ECE-B,student
+6,23951A0504,CSE,Sarah Wilson,B,F,12-05-2005,R23,CSE-B,student
+7,23951A0505,CSE,Michael Chen,C,M,30-11-2005,R23,CSE-C,student
+8,23951A1201,IT,Lisa Taylor,A,F,18-02-2005,R23,IT-A,student
+9,23951A1202,IT,David Miller,A,M,25-08-2005,R23,IT-A,student
+10,23951A0401,ECE,James Anderson,A,M,14-04-2005,R23,ECE-A,student
+11,ADMIN1,ADMIN,System Admin,,M,01-01-1990,,All,admin
+12,INSTRUCTOR1,CSE,Dr. Instructor,,F,15-05-1985,,All,instructor

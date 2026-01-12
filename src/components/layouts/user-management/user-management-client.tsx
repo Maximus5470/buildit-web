@@ -10,6 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { deleteUser } from "@/actions/user-management";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,6 +63,7 @@ export interface User {
   role: "student" | "instructor" | "admin";
   createdAt: Date;
   banned: boolean | null;
+  dateOfBirth?: Date;
 }
 
 interface UserManagementClientProps {
@@ -76,16 +78,19 @@ const _roleColors: Record<string, string> = {
 };
 
 const branchColors: Record<string, string> = {
-  CSE: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30",
-  DS: "bg-violet-100 text-violet-700 dark:bg-violet-900/30",
-  CS: "bg-teal-100 text-teal-700 dark:bg-teal-900/30",
-  IT: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30",
-  AERO: "bg-sky-100 text-sky-700 dark:bg-sky-900/30",
-  MECH: "bg-slate-100 text-slate-700 dark:bg-slate-900/30",
-  "AI/ML": "bg-pink-100 text-pink-700 dark:bg-pink-900/30",
-  CIVIL: "bg-stone-100 text-stone-700 dark:bg-stone-900/30",
-  EEE: "bg-orange-100 text-orange-700 dark:bg-orange-900/30",
-  ECE: "bg-amber-100 text-amber-700 dark:bg-amber-900/30",
+  CSE: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400",
+  DS: "bg-violet-100 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400",
+  CS: "bg-teal-100 text-teal-700 dark:bg-teal-950/30 dark:text-teal-400",
+  IT: "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/30 dark:text-cyan-400",
+  AERO: "bg-sky-100 text-sky-700 dark:bg-sky-950/30 dark:text-sky-400",
+  MECH: "bg-slate-100 text-slate-700 dark:bg-slate-950/30 dark:text-slate-400",
+  "AI/ML": "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-400",
+  CIVIL: "bg-stone-100 text-stone-700 dark:bg-stone-950/30 dark:text-stone-400",
+  EEE: "bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400",
+  ECE: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400",
+  ADMIN:
+    "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 font-bold",
+  EXAM: "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400",
 };
 
 export default function UserManagementClient({
@@ -116,11 +121,11 @@ export default function UserManagementClient({
   }, [users, search, branchFilter, semesterFilter]);
 
   const branches = useMemo(() => {
-    return [...new Set(users.map((u) => u.branch))].sort();
+    return [...new Set(users.map((u) => u.branch).filter(Boolean))].sort();
   }, [users]);
 
   const semesters = useMemo(() => {
-    return [...new Set(users.map((u) => u.semester))].sort();
+    return [...new Set(users.map((u) => u.semester).filter(Boolean))].sort();
   }, [users]);
 
   const handleEdit = (user: User) => {
@@ -135,9 +140,18 @@ export default function UserManagementClient({
 
   const confirmDelete = async () => {
     if (!selectedUser) return;
-    setUsers(users.filter((u) => u.id !== selectedUser.id));
-    setDeleteDialogOpen(false);
-    setSelectedUser(null);
+    try {
+      const result = await deleteUser(selectedUser.id);
+      if (result.error) {
+        // toast.error(result.error);
+        return;
+      }
+      setUsers(users.filter((u) => u.id !== selectedUser.id));
+      setDeleteDialogOpen(false);
+      setSelectedUser(null);
+    } catch (error) {
+      console.error("Failed to delete user", error);
+    }
   };
 
   const handleUserAdded = (newUser: User) => {
@@ -290,7 +304,7 @@ export default function UserManagementClient({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-sm font-medium text-primary">
+                        <div className="h-8 w-8 rounded-full bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center text-sm font-medium text-primary">
                           {user.name.charAt(0).toUpperCase()}
                         </div>
                         <div>

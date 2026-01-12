@@ -18,6 +18,7 @@ interface UserRecord {
   "D.O.B": string;
   Regulation: string;
   UserGroup: string;
+  Role: string;
 }
 
 async function seedUsers() {
@@ -80,7 +81,10 @@ async function seedUsers() {
       const password = `${day}${month}${year}`; // ddMMyyyy
       const dobDate = new Date(`${year}-${month}-${day}`);
       const email = `${rollNo}@iare.ac.in`.toLowerCase();
-      const role = "student";
+      const role = (record.Role?.toLowerCase() || "student") as
+        | "student"
+        | "instructor"
+        | "admin";
 
       let userId: string | undefined;
 
@@ -106,8 +110,14 @@ async function seedUsers() {
               section: record.Section,
               dateOfBirth: dobDate,
               regulation: record.Regulation,
-              semester: "6", // Default semester
+              semester: record.Role === "student" ? "6" : null, // Only students have semester
               rollNumber: rollNo,
+              gender:
+                record.Gender === "M"
+                  ? "male"
+                  : record.Gender === "F"
+                    ? "female"
+                    : "other",
             })
             .where(eq(user.id, userId));
           created++;
@@ -136,6 +146,7 @@ async function seedUsers() {
                 dateOfBirth: dobDate,
                 regulation: record.Regulation,
                 rollNumber: rollNo,
+                role: role,
               })
               .where(eq(user.id, userId));
             updated++;
