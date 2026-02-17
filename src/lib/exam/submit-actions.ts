@@ -14,11 +14,12 @@ import { auth } from "@/lib/auth";
 import { calculateGradingScore, type GradingConfig } from "@/lib/grading";
 import {
   executeCode,
-  type JobResult,
   mapTestCases,
-  TurboError,
-  type TurboTestCase,
-} from "@/lib/turbo";
+  mapLanguageToOptimus,
+  OptimusError,
+  type OptimusTestCase,
+  type OptimusExecutionResult,
+} from "@/lib/optimus";
 
 // ============================================
 // Types
@@ -98,8 +99,9 @@ export async function submitQuestion(
       return { success: false, error: "No test cases found for grading" };
     }
 
-    // 4. Turbo Execution (Hidden)
-    const turboTestCases: TurboTestCase[] = mapTestCases(
+    // 4. Optimus Execution (Hidden)
+    const language = mapLanguageToOptimus(input.language);
+    const optimusTestCases: OptimusTestCase[] = mapTestCases(
       gradingTestCases.map((tc) => ({
         id: tc.id,
         input: tc.input,
@@ -107,12 +109,10 @@ export async function submitQuestion(
       })),
     );
 
-    const executionResult: JobResult = await executeCode(
+    const executionResult: OptimusExecutionResult = await executeCode(
       input.code,
-      input.language,
-      turboTestCases,
-      undefined,
-      input.version,
+      language,
+      optimusTestCases,
     );
 
     // 5. Determine Verdict
@@ -121,24 +121,31 @@ export async function submitQuestion(
     let passedCount = 0;
     let details = "";
 
-    if (
-      executionResult.compile &&
-      executionResult.compile.status === "COMPILATION_ERROR"
-    ) {
-      verdict = "compile_error";
-      details = executionResult.compile.stderr || "Compilation failed";
-    } else if (
-      executionResult.run &&
-      executionResult.run.status !== "SUCCESS"
-    ) {
+    // Check for timeout
+    if (executionResult.overall_status === "timedout") {
       verdict = "runtime_error";
-      details =
-        executionResult.run.stderr ||
-        `Runtime Error: ${executionResult.run.status}`;
-    } else {
-      // Check test cases
-      const parsedResults = executionResult.testcases;
-      passedCount = parsedResults.filter((tc) => tc.passed).length;
+      details = "Execution timed out";
+    } 
+    // Check for compilation errors (stderr without stdout)
+    else if (executionResult.overall_status === "failed") {
+      const firstResult = executionResult.results[0];
+      if (firstResult?.stderr && !firstResult.stdout) {
+        verdict = "compile_error";
+        details = firstResult.stderr;
+      } else {
+        // Tests ran but some/all failed - count them
+        passedCount = executionResult.results.filter((tc) => tc.status === "passed").length;
+        
+        if (passedCount === gradingTestCases.length) {
+          verdict = "passed";
+        } else {
+          verdict = "failed";
+        }
+      }
+    } 
+    else {
+      // Check test cases for completed execution
+      passedCount = executionResult.results.filter((tc) => tc.status === "passed").length;
 
       if (passedCount === gradingTestCases.length) {
         verdict = "passed";
@@ -204,7 +211,7 @@ export async function submitQuestion(
     const gradingConfig = assignment.exam.gradingConfig as GradingConfig;
     const questionDifficulties: Record<string, "easy" | "medium" | "hard"> = {};
 
-    if (gradingStrategy === "difficulty_based") {
+    if (gradingStrategy === "difficulty_based" || gradingStrategy === "standard_20_40_50") {
       const questionDetails = await db.query.questions.findMany({
         where: inArray(questions.id, assignedQuestionIds),
         columns: {
@@ -245,7 +252,7 @@ export async function submitQuestion(
     };
   } catch (error) {
     console.error("Submission error:", error);
-    if (error instanceof TurboError) {
+    if (error instanceof OptimusError) {
       return {
         success: false,
         error: `Execution Engine Error: ${error.message}`,

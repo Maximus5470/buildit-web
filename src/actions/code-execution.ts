@@ -2,11 +2,10 @@
 
 import {
   mapTestCases,
-  executeCode as turboExecute,
-  getRuntimes as turboGetRuntimes,
-} from "@/lib/turbo";
-
-const _USE_TURBO = true;
+  executeCode as optimusExecute,
+  mapLanguageToOptimus,
+  type OptimusTestCase,
+} from "@/lib/optimus";
 
 export type FileContent = {
   name?: string;
@@ -100,37 +99,41 @@ export async function executeCode(
 ): Promise<ExecuteCodeResponse> {
   try {
     const code = payload.files[0]?.content || "";
-    const turboResult = await turboExecute(
+    const language = mapLanguageToOptimus(payload.language);
+
+    // For simple stdin execution (no test cases), create a single test case
+    const testCases: OptimusTestCase[] = [
+      {
+        input: payload.stdin || "",
+        expected_output: "", // No expected output for custom input
+        weight: 10,
+      },
+    ];
+
+    const optimusResult = await optimusExecute(
       code,
-      payload.language,
-      undefined,
-      payload.stdin,
-      payload.version,
+      language,
+      testCases,
+      payload.run_timeout,
     );
 
-    // Convert Turbo result to standard format
+    // Extract the first (and only) test result
+    const testResult = optimusResult.results[0];
+
+    // Convert Optimus result to standard format
     return {
-      language: turboResult.language,
-      version: turboResult.version,
+      language: payload.language,
+      version: payload.version,
       run: {
-        stdout: turboResult.run?.stdout || "",
-        stderr: turboResult.run?.stderr || "",
-        output: turboResult.run?.stdout || "",
-        code: turboResult.run?.exit_code ?? null,
+        stdout: testResult?.stdout || "",
+        stderr: testResult?.stderr || "",
+        output: testResult?.stdout || "",
+        code: testResult?.status === "passed" ? 0 : 1,
         signal: null,
       },
-      compile: turboResult.compile
-        ? {
-            stdout: turboResult.compile.stdout,
-            stderr: turboResult.compile.stderr,
-            output: turboResult.compile.stdout,
-            code: turboResult.compile.exit_code,
-            signal: null,
-          }
-        : undefined,
     };
   } catch (error) {
-    console.error("Turbo execution error:", error);
+    console.error("Optimus execution error:", error);
     return {
       language: payload.language,
       version: payload.version,
@@ -154,7 +157,10 @@ export async function executeTestcases(
 ): Promise<ExecuteTestcasesResponse> {
   try {
     const code = payload.files[0]?.content || "";
-    const turboTestCases = mapTestCases(
+    const language = mapLanguageToOptimus(payload.language);
+    
+    // Map test cases to Optimus format
+    const optimusTestCases = mapTestCases(
       payload.testcases.map((tc) => ({
         id: tc.id,
         input: tc.input,
@@ -164,51 +170,43 @@ export async function executeTestcases(
       })),
     );
 
-    const turboResult = await turboExecute(
+    const optimusResult = await optimusExecute(
       code,
-      payload.language,
-      turboTestCases,
-      undefined,
-      payload.version,
+      language,
+      optimusTestCases,
+      payload.run_timeout,
     );
 
-    // Convert Turbo testcase results to standard format
-    const testcaseResults: TestcaseResult[] = turboResult.testcases.map(
-      (tc) => ({
-        id: tc.id,
-        input: payload.testcases.find((t) => t.id === tc.id)?.input || "",
-        expectedOutput:
-          payload.testcases.find((t) => t.id === tc.id)?.expectedOutput || "",
-        actualOutput: tc.actual_output,
-        passed: tc.passed,
-        run_details: {
-          stdout: tc.run_details?.stdout || "",
-          stderr: tc.run_details?.stderr || "",
-          code: tc.run_details?.exit_code ?? null,
-          signal: null,
-          memory: tc.run_details?.memory_usage || 0,
-          cpu_time: tc.run_details?.cpu_time || 0,
-          wall_time: tc.run_details?.execution_time || 0,
-        },
-      }),
+    // Convert Optimus testcase results to standard format
+    const testcaseResults: TestcaseResult[] = optimusResult.results.map(
+      (result, index) => {
+        const originalTestCase = payload.testcases[index];
+        return {
+          id: originalTestCase?.id || index.toString(),
+          input: originalTestCase?.input || "",
+          expectedOutput: originalTestCase?.expectedOutput || "",
+          actualOutput: result.stdout,
+          passed: result.status === "passed",
+          run_details: {
+            stdout: result.stdout,
+            stderr: result.stderr,
+            code: result.status === "passed" ? 0 : 1,
+            signal: null,
+            memory: 0, // Optimus doesn't provide memory info
+            cpu_time: result.execution_time_ms,
+            wall_time: result.execution_time_ms,
+          },
+        };
+      },
     );
 
     return {
-      language: turboResult.language,
-      version: turboResult.version,
-      compile: turboResult.compile
-        ? {
-            stdout: turboResult.compile.stdout,
-            stderr: turboResult.compile.stderr,
-            output: turboResult.compile.stdout,
-            code: turboResult.compile.exit_code,
-            signal: null,
-          }
-        : undefined,
+      language: payload.language,
+      version: payload.version,
       testcases: testcaseResults,
     };
   } catch (error) {
-    console.error("Turbo testcases execution error:", error);
+    console.error("Optimus testcases execution error:", error);
     return {
       language: payload.language,
       version: payload.version,
@@ -236,12 +234,26 @@ export async function executeTestcases(
 }
 
 export async function getRuntimes() {
-  const turboRuntimes = await turboGetRuntimes();
-  // Convert Turbo runtime format to expected format
-  return turboRuntimes.map((runtime) => ({
-    language: runtime.language,
-    version: runtime.version,
-    aliases: runtime.aliases,
-    runtime: runtime.runtime,
-  }));
+  // Optimus supports: python, java, rust
+  // Return a hardcoded list of supported runtimes
+  return [
+    {
+      language: "python",
+      version: "3.11",
+      aliases: ["py", "python3"],
+      runtime: "Python",
+    },
+    {
+      language: "java",
+      version: "17",
+      aliases: [],
+      runtime: "Java",
+    },
+    {
+      language: "rust",
+      version: "1.70",
+      aliases: ["rs"],
+      runtime: "Rust",
+    },
+  ];
 }

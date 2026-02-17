@@ -66,7 +66,7 @@ export default async function ResultsPage({ params }: ResultsPageProps) {
 
   if (gradingStrategy === "linear") {
     totalPossibleScore = totalQuestions * (gradingConfig?.marks || 0);
-  } else if (gradingStrategy === "difficulty_based") {
+  } else if (gradingStrategy === "difficulty_based" || gradingStrategy === "standard_20_40_50") {
     const assignedQuestionIds = assignment.assignedQuestionIds as string[];
     if (assignedQuestionIds.length > 0) {
       const questionDetails = await db.query.questions.findMany({
@@ -76,11 +76,14 @@ export default async function ResultsPage({ params }: ResultsPageProps) {
         },
       });
 
-      const difficultyMarks = {
-        easy: gradingConfig?.easy || 0,
-        medium: gradingConfig?.medium || 0,
-        hard: gradingConfig?.hard || 0,
-      };
+      const difficultyMarks =
+        gradingStrategy === "standard_20_40_50"
+          ? { easy: 20, medium: 40, hard: 50 }
+          : {
+              easy: gradingConfig?.easy || 0,
+              medium: gradingConfig?.medium || 0,
+              hard: gradingConfig?.hard || 0,
+            };
 
       for (const q of questionDetails) {
         totalPossibleScore += difficultyMarks[q.difficulty] || 0;
