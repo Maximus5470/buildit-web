@@ -70,12 +70,6 @@ export interface OptimusPendingResponse {
 const OPTIMUS_API_BASE_URL =
   process.env.OPTIMUS_API_URL || "http://127.0.0.1:80";
 
-// Log the configuration on module load
-console.log("Optimus API Configuration:", {
-  url: OPTIMUS_API_BASE_URL,
-  envVar: process.env.OPTIMUS_API_URL,
-});
-
 const POLLING_CONFIG = {
   intervalMs: 1500, // Poll every 1.5 seconds
   maxAttempts: 40, // Max 40 attempts = 60 seconds total
@@ -103,12 +97,6 @@ export async function executeCode(
   testCases: OptimusTestCase[],
   timeoutMs?: number,
 ): Promise<OptimusExecutionResult> {
-  console.log("Executing code with Optimus:", {
-    language,
-    testCasesCount: testCases.length,
-    timeoutMs,
-  });
-
   // Submit the job
   const jobId = await submitJob(sourceCode, language, testCases, timeoutMs);
 
@@ -150,8 +138,6 @@ async function submitJob(
   const idempotencyKey = uuidv4();
 
   const requestUrl = `${OPTIMUS_API_BASE_URL}/execute`;
-  console.log("Submitting job to:", requestUrl);
-  console.log("Payload:", JSON.stringify(payload, null, 2));
 
   const response = await fetch(requestUrl, {
     method: "POST",
@@ -161,8 +147,6 @@ async function submitJob(
     },
     body: JSON.stringify(payload),
   });
-
-  console.log("Response status:", response.status, response.statusText);
 
   if (!response.ok) {
     const responseText = await response.text();
@@ -186,7 +170,6 @@ async function submitJob(
   }
 
   const data = await response.json();
-  console.log("Optimus job submitted:", data);
   return data.job_id;
 }
 
@@ -199,8 +182,6 @@ async function submitJob(
 async function pollForResult(jobId: string): Promise<OptimusExecutionResult> {
   let attempts = 0;
 
-  console.log(`Starting to poll for job: ${jobId}`);
-
   while (attempts < POLLING_CONFIG.maxAttempts) {
     const pollUrl = `${OPTIMUS_API_BASE_URL}/job/${jobId}`;
     const response = await fetch(pollUrl, {
@@ -209,8 +190,6 @@ async function pollForResult(jobId: string): Promise<OptimusExecutionResult> {
         "Content-Type": "application/json",
       },
     });
-
-    console.log(`Poll attempt ${attempts + 1}, URL: ${pollUrl}, status: ${response.status}`);
 
     if (response.status === 202) {
       // Job still pending, continue polling
@@ -222,7 +201,6 @@ async function pollForResult(jobId: string): Promise<OptimusExecutionResult> {
     if (response.status === 200) {
       // Job completed
       const result: OptimusExecutionResult = await response.json();
-      console.log("Job completed:", result);
       return result;
     }
 
